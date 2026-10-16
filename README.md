@@ -17,7 +17,7 @@ Versión en español y más sencilla de instalar, basada en [EchoLingo de codeko
 - [x] Código base y créditos del proyecto original.
 - [x] Comprobador de nuevas versiones y opción para saltarlas.
 - [x] Flujo de compilación e instalador de Windows por GitHub Actions.
-- [x] Preparación de LibreTranslate desde la app (requiere Python 3.12 con Python Launcher).
+- [x] Preparación de LibreTranslate desde la app (requiere Python 3.13 con Python Launcher; el instalador puede añadirlo).
 - [ ] Probar instalador en Windows 10/11 y juego/Discord.
 - [ ] Publicar primera versión estable.
 
