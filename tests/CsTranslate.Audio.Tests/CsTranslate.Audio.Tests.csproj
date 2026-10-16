@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\CsTranslate.Audio\CsTranslate.Audio.csproj" />
+    <ProjectReference Include="..\..\src\CsTranslate.Core\CsTranslate.Core.csproj" />
   </ItemGroup>
 
 </Project>
