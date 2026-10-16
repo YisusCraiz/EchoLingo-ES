@@ -26,7 +26,8 @@ internal static class UpdateChecker
             string tag = tagElement.GetString() ?? string.Empty;
             if (!Version.TryParse(tag.TrimStart('v', 'V'), out var latestVersion))
                 return;
-            var currentVersion = Assembly.GetExecutingAssembly().GetName().Version ?? new Version(0, 1, 0);
+            var rawVersion = Assembly.GetExecutingAssembly().GetName().Version ?? new Version(0, 1, 0);
+            var currentVersion = new Version(rawVersion.Major, rawVersion.Minor, Math.Max(0, rawVersion.Build));
             if (latestVersion <= currentVersion || WasSkipped(tag))
                 return;
 
