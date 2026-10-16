@@ -36,7 +36,7 @@ public class LibreTranslateClientTests
     {
         var response = new HttpResponseMessage(System.Net.HttpStatusCode.BadRequest)
         {
-            Content = new StringContent("{\\"error\\":\\"language pair unavailable\\"}"),
+            Content = new StringContent("""{"error":"language pair unavailable"}"""),
         };
         var handler = new StubHandler(response);
         using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost/") };
