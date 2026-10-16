@@ -8,7 +8,7 @@ namespace CsTranslate.App;
 
 internal static class UpdateChecker
 {
-    private const string ApiUrl = "https://api.github.com/repos/YisusCraiz/EchoLingo-ES/releases/latest";
+    private const string ApiUrl = "https://api.github.com/repos/YisusCraiz/EchoLingo-ES/releases?per_page=1";
     private const string ReleasesUrl = "https://github.com/YisusCraiz/EchoLingo-ES/releases/latest";
     private static readonly HttpClient Client = CreateClient();
 
@@ -20,7 +20,10 @@ internal static class UpdateChecker
             if (!response.IsSuccessStatusCode)
                 return;
             using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-            var root = json.RootElement;
+            var releases = json.RootElement;
+            if (releases.ValueKind != JsonValueKind.Array || releases.GetArrayLength() == 0)
+                return;
+            var root = releases[0];
             if (!root.TryGetProperty("tag_name", out var tagElement))
                 return;
             string tag = tagElement.GetString() ?? string.Empty;
