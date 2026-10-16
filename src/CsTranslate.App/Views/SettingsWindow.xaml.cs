@@ -48,25 +48,25 @@ public partial class SettingsWindow : Window
         int? processId = ProcessLookup.FindProcessId(_settings.TargetProcessName);
         if (processId is null)
         {
-            StatusText.Text = $"'{_settings.TargetProcessName}' adinda calisan bir process bulunamadi.";
+            StatusText.Text = $"'{_settings.TargetProcessName}' no se encontró una aplicación en ejecución llamada.";
             return;
         }
 
         if (!File.Exists(_settings.WhisperModelPath))
         {
-            StatusText.Text = $"Whisper model dosyasi bulunamadi: {_settings.WhisperModelPath}";
+            StatusText.Text = $"No se encontró el archivo del modelo Whisper: {_settings.WhisperModelPath}";
             return;
         }
 
         var translationClient = new LibreTranslateClient(_settings.LibreTranslateBaseUrl);
         if (!await translationClient.IsHealthyAsync())
         {
-            StatusText.Text = $"LibreTranslate {_settings.LibreTranslateBaseUrl} adresinde calismiyor.";
+            StatusText.Text = $"LibreTranslate {_settings.LibreTranslateBaseUrl} no está disponible en esa dirección.";
             return;
         }
 
         StartButton.IsEnabled = false;
-        StatusText.Text = "Baslatiliyor...";
+        StatusText.Text = "Iniciando...";
 
         try
         {
@@ -85,12 +85,12 @@ public partial class SettingsWindow : Window
 
             _pipeline.Start();
 
-            StatusText.Text = $"Calisiyor: {_settings.TargetProcessName} (PID {processId}) -> {_settings.TargetLanguageCode}";
+            StatusText.Text =  $"Traduciendo: {_settings.TargetProcessName} (PID {processId}) -> {_settings.TargetLanguageCode}";
             StopButton.IsEnabled = true;
         }
         catch (Exception ex)
         {
-            StatusText.Text = $"Baslatilamadi: {ex.Message}";
+            StatusText.Text =  $"No se pudo iniciar: {ex.Message}";
 
             _pipeline = null;
             _captureSource?.Dispose();
@@ -105,11 +105,11 @@ public partial class SettingsWindow : Window
     private async void OnStopClicked(object sender, RoutedEventArgs e)
     {
         StopButton.IsEnabled = false;
-        StatusText.Text = "Durduruluyor...";
+        StatusText.Text = "Deteniendo...";
 
         await StopPipelineIfRunningAsync();
 
-        StatusText.Text = "Durduruldu.";
+        StatusText.Text = "Detenido.";
         StartButton.IsEnabled = true;
     }
 
@@ -132,7 +132,7 @@ public partial class SettingsWindow : Window
         StartButton.IsEnabled = false;
         StopButton.IsEnabled = false;
         CloseButton.IsEnabled = false;
-        StatusText.Text = "Kapatiliyor...";
+        StatusText.Text = "Cerrando...";
 
         await StopPipelineIfRunningAsync();
 
