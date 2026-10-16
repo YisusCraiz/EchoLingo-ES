@@ -43,10 +43,32 @@ public sealed class LibreTranslateClient : ITranslationClient
         string sourceLanguage = "auto",
         CancellationToken cancellationToken = default)
     {
+        string normalizedSource = NormalizeLanguageCode(sourceLanguage);
+        string normalizedTarget = NormalizeLanguageCode(targetLanguage);
+        if (!string.Equals(normalizedSource, "auto", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(normalizedSource, normalizedTarget, StringComparison.OrdinalIgnoreCase))
+        {
+            // LibreTranslate may not have a same-language model pair. If Whisper
+            // already identified the target language, preserve the text directly.
+            return new TranslationResult(text, sourceLanguage);
+        }
+
         var request = new TranslateRequest(text, sourceLanguage, targetLanguage, "text");
 
         using HttpResponseMessage response = await _httpClient.PostAsJsonAsync("translate", request, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            string errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (errorBody.Length > 2000)
+            {
+                errorBody = errorBody[..2000];
+            }
+
+            throw new HttpRequestException(
+                $"LibreTranslate devolvió HTTP {(int)response.StatusCode} ({response.StatusCode}): {errorBody}",
+                inner: null,
+                response.StatusCode);
+        }
 
         TranslateResponse? payload = await response.Content.ReadFromJsonAsync<TranslateResponse>(cancellationToken: cancellationToken);
         if (payload is null)
@@ -68,6 +90,13 @@ public sealed class LibreTranslateClient : ITranslationClient
         {
             return false;
         }
+    }
+
+    private static string NormalizeLanguageCode(string language)
+    {
+        string trimmed = language.Trim();
+        int separator = trimmed.IndexOfAny(['-', '_']);
+        return separator >= 0 ? trimmed[..separator] : trimmed;
     }
 
     private sealed record TranslateRequest(
