@@ -117,8 +117,21 @@ internal sealed class LibreTranslateServiceManager : IDisposable
         throw new TimeoutException($"LibreTranslate no respondió después de 10 minutos. Revisa el registro: {logPath}");
     }
 
-    private static Task RunLauncherAsync(IReadOnlyList<string> arguments, CancellationToken cancellationToken) =>
-        RunProcessAsync("py.exe", arguments, null, cancellationToken);
+    private static Task RunLauncherAsync(IReadOnlyList<string> arguments, CancellationToken cancellationToken)
+    {
+        string localLauncher = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Programs", "Python", "Launcher", "py.exe");
+        string appExecutionAlias = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Microsoft", "WindowsApps", "py.exe");
+        string executable = File.Exists(localLauncher)
+            ? localLauncher
+            : File.Exists(appExecutionAlias)
+                ? appExecutionAlias
+                : "py.exe";
+        return RunProcessAsync(executable, arguments, null, cancellationToken);
+    }
 
     private static Task RunPythonAsync(string pythonPath, IReadOnlyList<string> arguments, CancellationToken cancellationToken) =>
         RunProcessAsync(pythonPath, arguments, null, cancellationToken);
