@@ -16,6 +16,7 @@ public partial class SettingsWindow : Window
 {
     private readonly SettingsService _settingsService = new();
     private readonly OverlayViewModel _overlayViewModel;
+    private readonly LibreTranslateServiceManager _translationService = new();
 
     private AppSettings _settings;
     private IAudioCaptureSource? _captureSource;
@@ -48,7 +49,7 @@ public partial class SettingsWindow : Window
         int? processId = ProcessLookup.FindProcessId(_settings.TargetProcessName);
         if (processId is null)
         {
-            StatusText.Text = $"'{_settings.TargetProcessName}' no se encontró una aplicación en ejecución llamada.";
+            StatusText.Text = $"No se encontró una aplicación en ejecución llamada '{_settings.TargetProcessName}'.";
             return;
         }
 
@@ -61,8 +62,32 @@ public partial class SettingsWindow : Window
         var translationClient = new LibreTranslateClient(_settings.LibreTranslateBaseUrl);
         if (!await translationClient.IsHealthyAsync())
         {
-            StatusText.Text = $"LibreTranslate {_settings.LibreTranslateBaseUrl} no está disponible en esa dirección.";
-            return;
+            MessageBoxResult choice = MessageBox.Show(
+                "EchoLingo puede preparar LibreTranslate en un entorno aislado dentro de tu usuario. Se necesita Python 3.12 y conexión a internet. La primera descarga de paquetes y modelos puede tardar varios minutos y ocupar bastante espacio. ¿Continuar?",
+                "Preparar traducción",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Information);
+
+            if (choice != MessageBoxResult.Yes)
+            {
+                StatusText.Text = "Preparación cancelada.";
+                return;
+            }
+
+            StartButton.IsEnabled = false;
+            StatusText.Text = "Preparando el traductor...";
+            try
+            {
+                await _translationService.EnsureStartedAsync(
+                    _settings.LibreTranslateBaseUrl,
+                    status => StatusText.Text = status);
+            }
+            catch (Exception ex)
+            {
+                StatusText.Text = $"No se pudo preparar LibreTranslate: {ex.Message}";
+                StartButton.IsEnabled = true;
+                return;
+            }
         }
 
         StartButton.IsEnabled = false;
@@ -81,16 +106,16 @@ public partial class SettingsWindow : Window
                 translationClient,
                 _settings,
                 onTranslatedLine: line => Dispatcher.Invoke(() => _overlayViewModel.AddLine(line)),
-                onError: ex => Dispatcher.Invoke(() => StatusText.Text = $"Hata: {ex.Message}"));
+                onError: ex => Dispatcher.Invoke(() => StatusText.Text = $"Error: {ex.Message}"));
 
             _pipeline.Start();
 
-            StatusText.Text =  $"Traduciendo: {_settings.TargetProcessName} (PID {processId}) -> {_settings.TargetLanguageCode}";
+            StatusText.Text = $"Traduciendo: {_settings.TargetProcessName} (PID {processId}) -> {_settings.TargetLanguageCode}";
             StopButton.IsEnabled = true;
         }
         catch (Exception ex)
         {
-            StatusText.Text =  $"No se pudo iniciar: {ex.Message}";
+            StatusText.Text = $"No se pudo iniciar: {ex.Message}";
 
             _pipeline = null;
             _captureSource?.Dispose();
@@ -135,6 +160,7 @@ public partial class SettingsWindow : Window
         StatusText.Text = "Cerrando...";
 
         await StopPipelineIfRunningAsync();
+        _translationService.Dispose();
 
         Application.Current.Shutdown();
     }

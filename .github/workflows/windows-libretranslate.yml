@@ -2,12 +2,14 @@ name: Validate LibreTranslate on Windows
 
 on:
   push:
-    branches: [main]
+    branches: [main, "feat/**"]
     paths:
       - ".github/workflows/windows-libretranslate.yml"
+      - "src/CsTranslate.App/LibreTranslateServiceManager.cs"
   pull_request:
     paths:
       - ".github/workflows/windows-libretranslate.yml"
+      - "src/CsTranslate.App/LibreTranslateServiceManager.cs"
   workflow_dispatch:
 
 permissions:
@@ -23,7 +25,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install LibreTranslate
-        run: python -m pip install --upgrade pip libretranslate
+        run: python -m pip install --disable-pip-version-check --upgrade pip libretranslate==1.8.3
 
       - name: Start and test local English-Spanish translation
         shell: pwsh
