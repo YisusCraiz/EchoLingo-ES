@@ -102,8 +102,16 @@ jobs:
       - name: Install Python per user as the app installer does
         shell: pwsh
         run: |
-          & $env:PYTHON_INSTALLER /quiet InstallAllUsers=0 PrependPath=1 Include_launcher=1 InstallLauncherAllUsers=0 Include_test=0
-          if ($LASTEXITCODE -ne 0) {
-            throw "El instalador oficial de Python terminó con código $LASTEXITCODE."
+          $install = Start-Process -FilePath $env:PYTHON_INSTALLER -ArgumentList @("/quiet", "InstallAllUsers=0", "PrependPath=1", "Include_launcher=1", "InstallLauncherAllUsers=0", "Include_test=0") -Wait -PassThru
+          if ($install.ExitCode -ne 0) {
+            throw "El instalador oficial de Python terminó con código $($install.ExitCode)."
           }
-          py -3.13 --version
+          $launcherCandidates = @(
+            (Join-Path $env:LOCALAPPDATA "Programs\\Python\\Launcher\\py.exe"),
+            (Join-Path $env:LOCALAPPDATA "Microsoft\\WindowsApps\\py.exe")
+          )
+          $launcher = $launcherCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $launcher) {
+            $launcher = (Get-Command py.exe -ErrorAction Stop).Source
+          }
+          & $launcher -3.13 --version
