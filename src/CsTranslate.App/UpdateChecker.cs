@@ -27,6 +27,9 @@ internal static class UpdateChecker
             if (!root.TryGetProperty("tag_name", out var tagElement))
                 return;
             string tag = tagElement.GetString() ?? string.Empty;
+            string releaseUrl = root.TryGetProperty("html_url", out var urlElement)
+                ? urlElement.GetString() ?? ReleasesUrl
+                : ReleasesUrl;
             if (!Version.TryParse(tag.TrimStart('v', 'V'), out var latestVersion))
                 return;
             var rawVersion = Assembly.GetExecutingAssembly().GetName().Version ?? new Version(0, 1, 0);
@@ -45,7 +48,7 @@ internal static class UpdateChecker
                 SaveSkippedVersion(tag);
                 return;
             }
-            Process.Start(new ProcessStartInfo(ReleasesUrl) { UseShellExecute = true });
+            Process.Start(new ProcessStartInfo(releaseUrl) { UseShellExecute = true });
         }
         catch
         {
