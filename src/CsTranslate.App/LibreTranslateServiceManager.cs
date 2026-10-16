@@ -6,8 +6,8 @@ namespace CsTranslate.App;
 
 /// <summary>
 /// Keeps LibreTranslate and its Python packages isolated from the user's
-/// system-wide Python installation. Python 3.12 must be installed once; the
-/// managed virtual environment and Argos language models stay in LocalAppData.
+/// system-wide Python installation. Python 3.13 is required for a new setup;
+/// the managed virtual environment and Argos language models stay in LocalAppData.
 /// </summary>
 internal sealed class LibreTranslateServiceManager : IDisposable
 {
@@ -40,17 +40,22 @@ internal sealed class LibreTranslateServiceManager : IDisposable
 
         if (!File.Exists(venvPython))
         {
-            reportStatus("Buscando Python 3.12...");
-            await RunLauncherAsync(["-3.12", "--version"], cancellationToken);
+            reportStatus("Buscando Python 3.13...");
+            await RunLauncherAsync(["-3.13", "--version"], cancellationToken);
             reportStatus("Creando un entorno aislado...");
-            await RunLauncherAsync(["-3.12", "-m", "venv", Path.Combine(_runtimeDirectory, "venv")], cancellationToken);
+            await RunLauncherAsync(["-3.13", "-m", "venv", Path.Combine(_runtimeDirectory, "venv")], cancellationToken);
         }
 
-        if (!File.Exists(serverExe))
+        string versionFile = Path.Combine(_runtimeDirectory, "libretranslate.version");
+        bool translatorNeedsInstall = !File.Exists(serverExe) ||
+            !File.Exists(versionFile) ||
+            !string.Equals(File.ReadAllText(versionFile).Trim(), LibreTranslateVersion, StringComparison.Ordinal);
+        if (translatorNeedsInstall)
         {
             reportStatus("Descargando e instalando LibreTranslate. La primera descarga puede tardar...");
 
-            await RunPythonAsync(venvPython, ["-m", "pip", "install", "--disable-pip-version-check", "setuptools<81", $"libretranslate=={LibreTranslateVersion}"], cancellationToken);
+            await RunPythonAsync(venvPython, ["-m", "pip", "install", "--upgrade", "--disable-pip-version-check", "setuptools<81", $"libretranslate=={LibreTranslateVersion}"], cancellationToken);
+            File.WriteAllText(versionFile, LibreTranslateVersion);
         }
 
         if (_server is { HasExited: false })
@@ -160,7 +165,7 @@ internal sealed class LibreTranslateServiceManager : IDisposable
         catch (System.ComponentModel.Win32Exception ex)
         {
             throw new InvalidOperationException(
-                "No se encontró el lanzador de Python. Instala Python 3.12 desde python.org y marca la opción “Python Launcher”, luego vuelve a intentar.", ex);
+                "No se encontró Python 3.13. Vuelve a ejecutar el instalador de EchoLingo y marca “Instalar Python 3.13”, o instálalo desde python.org y vuelve a intentar.", ex);
         }
 
         process.BeginOutputReadLine();
