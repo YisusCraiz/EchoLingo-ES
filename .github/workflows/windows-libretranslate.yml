@@ -18,20 +18,26 @@ permissions:
 jobs:
   smoke-test:
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.14"]
+    env:
+      PYTHON_VERSION: ${{ matrix.python-version }}
     steps:
       - name: Install Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
 
       - name: Verify Python Launcher
-        run: py -3.12 --version
+        run: py "-${{ matrix.python-version }}" --version
 
       - name: Create isolated environment and install LibreTranslate
         shell: pwsh
         run: |
           $python = Join-Path $env:RUNNER_TEMP "translator-venv\Scripts\python.exe"
-          py -3.12 -m venv (Split-Path (Split-Path $python))
+          py "-$env:PYTHON_VERSION" -m venv (Split-Path (Split-Path $python))
           & $python -m pip install --disable-pip-version-check "setuptools<81" libretranslate==1.8.3
           "TRANSLATOR_EXE=$((Split-Path $python) + '\libretranslate.exe')" >> $env:GITHUB_ENV
 
