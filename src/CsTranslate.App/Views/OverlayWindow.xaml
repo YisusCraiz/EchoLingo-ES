@@ -1,7 +1,7 @@
 <Window x:Class="CsTranslate.App.Views.OverlayWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="CsTranslate Overlay"
+        Title="EchoLingo ES - Subtítulos"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
@@ -21,7 +21,7 @@
             BorderThickness="1">
         <StackPanel>
             <TextBlock x:Name="EditModeHint"
-                       Text="Duzenleme modu (surukleyip birakabilirsiniz) - F9 ile kapat"
+                       Text="Modo de edición: arrastra para mover. Presiona F9 para cerrar."
                        Foreground="#FFD966"
                        FontSize="11"
                        Margin="0,0,0,6"
