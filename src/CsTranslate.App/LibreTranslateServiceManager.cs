@@ -11,7 +11,7 @@ namespace CsTranslate.App;
 /// </summary>
 internal sealed class LibreTranslateServiceManager : IDisposable
 {
-    private const string LibreTranslateVersion = "1.8.3";
+    private const string LibreTranslateVersion = "1.9.6";
     private static readonly TimeSpan StartupTimeout = TimeSpan.FromMinutes(10);
     private readonly string _runtimeDirectory = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
