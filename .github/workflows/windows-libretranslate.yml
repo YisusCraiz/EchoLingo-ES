@@ -1,0 +1,67 @@
+name: Validate LibreTranslate on Windows
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/windows-libretranslate.yml"
+  pull_request:
+    paths:
+      - ".github/workflows/windows-libretranslate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke-test:
+    runs-on: windows-latest
+    steps:
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install LibreTranslate
+        run: python -m pip install --upgrade pip libretranslate
+
+      - name: Start and test local English-Spanish translation
+        shell: pwsh
+        run: |
+          $command = (Get-Command libretranslate).Source
+          $stdout = Join-Path $env:RUNNER_TEMP "libretranslate-out.log"
+          $stderr = Join-Path $env:RUNNER_TEMP "libretranslate-err.log"
+          $server = Start-Process -FilePath $command -ArgumentList @("--load-only", "en,es", "--host", "127.0.0.1", "--port", "5000") -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+
+          try {
+            $ready = $false
+            for ($i = 0; $i -lt 60; $i++) {
+              if ($server.HasExited) {
+                Get-Content $stdout, $stderr -ErrorAction SilentlyContinue
+                throw "LibreTranslate stopped before becoming ready."
+              }
+              try {
+                Invoke-RestMethod "http://127.0.0.1:5000/languages" -TimeoutSec 3 | Out-Null
+                $ready = $true
+                break
+              } catch {
+                Start-Sleep -Seconds 5
+              }
+            }
+
+            if (-not $ready) {
+              Get-Content $stdout, $stderr -ErrorAction SilentlyContinue
+              throw "LibreTranslate did not become ready within five minutes."
+            }
+
+            $body = @{ q = "Hello world"; source = "en"; target = "es"; format = "text" } | ConvertTo-Json
+            $result = Invoke-RestMethod -Uri "http://127.0.0.1:5000/translate" -Method Post -ContentType "application/json" -Body $body -TimeoutSec 180
+            if ([string]::IsNullOrWhiteSpace($result.translatedText)) {
+              throw "LibreTranslate returned an empty translation."
+            }
+            Write-Host "Translation smoke test passed: $($result.translatedText)"
+          } finally {
+            if (-not $server.HasExited) {
+              Stop-Process -Id $server.Id -Force
+            }
+          }
