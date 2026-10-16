@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "language": "en",
+  "replacements": [
+    { "pattern": "\\bwatch out\\b", "replacement": "watch out", "caseInsensitive": true, "note": "Ornek girdi - kullanicilarin kendi ASR duzeltmelerini eklemesi icin sablon" }
+  ],
+  "regexRules": [
+    { "pattern": "\\s{2,}", "replacement": " ", "note": "Fazla bosluklari tek bosluga indir" }
+  ]
+}

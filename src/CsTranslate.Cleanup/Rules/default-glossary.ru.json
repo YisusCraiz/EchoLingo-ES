@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "language": "ru",
+  "replacements": [
+    { "pattern": "\\bраш(?:им|ит|аем)?\\b", "replacement": "rush", "caseInsensitive": true, "note": "Oyun jargonu: rush cagrisi, ceviri motoruna gecmeden once normalize edilir" },
+    { "pattern": "\\bотступаем\\b", "replacement": "fall back", "caseInsensitive": true, "note": "Geri cekilme cagrisi" },
+    { "pattern": "\\bплант(?:уем|ует|ует)?\\b", "replacement": "planting", "caseInsensitive": true, "note": "Bomba yerlestirme" }
+  ],
+  "regexRules": [
+    { "pattern": "\\s{2,}", "replacement": " ", "note": "Fazla bosluklari tek bosluga indir" }
+  ]
+}

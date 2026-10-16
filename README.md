@@ -2,35 +2,33 @@
 
 Versión en español y más sencilla de instalar, basada en [EchoLingo de codekorvy](https://github.com/codekorvy/echolingo).
 
-> Proyecto en desarrollo. Aún no hay instalador publicado. La aplicación traduce el audio de una aplicación de Windows a subtítulos en pantalla. Esta primera etapa prepara la base del código y la compilación automática para Windows.
+> **Estado: preliminar.** El instalador aún no está publicado. La primera versión instala la app y el modelo Whisper. La configuración automática de LibreTranslate sigue pendiente; consulta [docs/SETUP.md](docs/SETUP.md).
 
 ## Objetivo
 
 - Interfaz e instrucciones en español.
-- Instalador de Windows y descarga inicial guiada de modelos.
-- Subtítulos traducidos en Discord y juegos.
-- Aviso de nuevas versiones con opciones para actualizar o saltar.
-- Procesamiento local del audio.
+- Instalador de Windows, sin instalar el SDK de .NET.
+- Preparación automática de modelos y servicio de traducción.
+- Aviso de actualizaciones con opciones para actualizar o saltar.
+- Subtítulos de traducción local para Discord y juegos.
 
 ## Estado
 
-- [x] Repositorio propio y créditos de origen.
-- [ ] Instalador probado en Windows.
-- [ ] Configuración automática de Whisper y LibreTranslate.
-- [ ] Actualizador con descarga e instalación desde Releases.
-- [ ] Prueba en Discord y juegos.
-- [ ] Primera versión pública.
+- [x] Código base y créditos del proyecto original.
+- [x] Comprobador de nuevas versiones y opción para saltarlas.
+- [x] Flujo de compilación e instalador de Windows por GitHub Actions.
+- [ ] Preparar automáticamente LibreTranslate y sus modelos.
+- [ ] Probar instalador en Windows 10/11 y juego/Discord.
+- [ ] Publicar primera versión estable.
 
-## Compilación
-
-El proyecto usa .NET 8, WPF y Windows 10/11. Consulta [docs/SETUP.md](docs/SETUP.md) para los requisitos actuales. Los Releases se compilarán con GitHub Actions al publicar una etiqueta `v*`.
+Para compilar desde Windows se requiere .NET 8 SDK. Una etiqueta vX.Y.Z activa las pruebas, compilación y creación de un Release preliminar.
 
 ## Créditos y licencias
 
-El código original de EchoLingo fue creado por **codekorvy** y se distribuye bajo MIT. Conservamos su licencia y los avisos de terceros; consulta [LICENSE](LICENSE) y [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+El código original fue creado por **codekorvy** y se distribuye bajo MIT. Conservamos su licencia y los avisos de terceros: [LICENSE](LICENSE), [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), [UPSTREAM.md](UPSTREAM.md).
 
-LibreTranslate es un servicio separado con licencia AGPL-3.0. No se incluye en este repositorio. No se publicará un instalador hasta revisar los avisos y condiciones de cada componente empaquetado.
+LibreTranslate usa AGPL-3.0 y no se incluye en el código ni en el instalador inicial.
 
 ## Privacidad
 
-El objetivo es que el audio se procese localmente. El comprobador de actualizaciones consultará GitHub Releases para detectar nuevas versiones. No se deben subir grabaciones ni modelos descargados al repositorio.
+El audio se procesa localmente. El comprobador consulta GitHub Releases, no envía grabaciones. No subas modelos descargados ni credenciales al repositorio.

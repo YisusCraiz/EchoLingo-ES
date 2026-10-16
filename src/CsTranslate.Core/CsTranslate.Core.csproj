@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CsTranslate.Speech\CsTranslate.Speech.csproj" />
+    <ProjectReference Include="..\CsTranslate.Cleanup\CsTranslate.Cleanup.csproj" />
+    <ProjectReference Include="..\CsTranslate.Translation\CsTranslate.Translation.csproj" />
+    <ProjectReference Include="..\CsTranslate.Audio\CsTranslate.Audio.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,13 @@
+# .NET build output
+bin/
+obj/
+
+# LibreTranslate local Python venv
+.venv-libretranslate/
+
+# Downloaded models / test samples (fetched by docs/SETUP.md, not checked in)
+tools/models/
+
+# Editor/OS
+.vs/
+*.user
