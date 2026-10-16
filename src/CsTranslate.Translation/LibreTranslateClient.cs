@@ -67,7 +67,7 @@ public sealed class LibreTranslateClient : ITranslationClient
             throw new HttpRequestException(
                 $"LibreTranslate devolvió HTTP {(int)response.StatusCode} ({response.StatusCode}): {errorBody}",
                 inner: null,
-                response.StatusCode);
+                statusCode: response.StatusCode);
         }
 
         TranslateResponse? payload = await response.Content.ReadFromJsonAsync<TranslateResponse>(cancellationToken: cancellationToken);
