@@ -24,15 +24,24 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install LibreTranslate
-        run: python -m pip install --disable-pip-version-check --upgrade pip libretranslate==1.8.3
+      - name: Verify Python Launcher
+        run: py -3.12 --version
+
+      - name: Create isolated environment and install LibreTranslate
+        shell: pwsh
+        run: |
+          $python = Join-Path $env:RUNNER_TEMP "translator-venv\Scripts\python.exe"
+          py -3.12 -m venv (Split-Path (Split-Path $python))
+          & $python -m pip install --disable-pip-version-check --upgrade pip
+          & $python -m pip install --disable-pip-version-check libretranslate==1.8.3
+          "TRANSLATOR_EXE=$((Split-Path $python) + '\libretranslate.exe')" >> $env:GITHUB_ENV
 
       - name: Start and test local English-Spanish translation
         shell: pwsh
         run: |
           $env:PYTHONUTF8 = "1"
           $env:PYTHONIOENCODING = "utf-8"
-          $command = (Get-Command libretranslate).Source
+          $command = $env:TRANSLATOR_EXE
           $stdout = Join-Path $env:RUNNER_TEMP "libretranslate-out.log"
           $stderr = Join-Path $env:RUNNER_TEMP "libretranslate-err.log"
           $server = Start-Process -FilePath $command -ArgumentList @("--load-only", "en,es", "--host", "127.0.0.1", "--port", "5000") -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
