@@ -31,6 +31,18 @@ jobs:
             $version = '0.1.0'
           }
           "APP_VERSION=$version" >> $env:GITHUB_ENV
+      - name: Descargar instalador opcional de Python 3.13
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force installer/python-runtime | Out-Null
+          $pythonInstaller = "installer/python-runtime/python-3.13.16-amd64.exe"
+          Invoke-WebRequest -Uri "https://www.python.org/ftp/python/3.13.16/python-3.13.16-amd64.exe" -OutFile $pythonInstaller
+          $expectedSha256 = "fb4f9f5d438b2396da0086dc70b935c530cb578e37adc6d354f7ad2037fee83b"
+          $actualSha256 = (Get-FileHash $pythonInstaller -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actualSha256 -ne $expectedSha256) {
+            throw "La suma SHA-256 del instalador de Python no coincide."
+          }
       - name: Publicar aplicación Windows x64
         if: startsWith(github.ref, 'refs/tags/v')
         run: >
