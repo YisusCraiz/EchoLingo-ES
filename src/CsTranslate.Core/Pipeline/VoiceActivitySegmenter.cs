@@ -18,6 +18,7 @@ public sealed class VoiceActivitySegmenter
     private WaveFormatInfo? _format;
     private DateTime _bufferStartedAt;
     private DateTime _lastLoudAt = DateTime.MinValue;
+    private bool _hasVoice;
 
     public event EventHandler<AudioChunk>? ChunkReady;
 
@@ -28,23 +29,35 @@ public sealed class VoiceActivitySegmenter
 
     public void Feed(byte[] pcm, WaveFormatInfo format)
     {
-        _format ??= format;
+        DateTime now = DateTime.UtcNow;
+        bool hasVoice = ComputeRms(pcm, format) > _settings.SilenceThresholdRms;
+
+        // Ignore silence until there is actual speech. Otherwise Whisper receives
+        // empty chunks every few seconds and can hallucinate text, adding noise
+        // and unnecessary work ahead of real translations.
+        if (!_hasVoice && !hasVoice)
+        {
+            return;
+        }
+
         if (_buffer.Count == 0)
         {
-            _bufferStartedAt = DateTime.UtcNow;
+            _bufferStartedAt = now;
+            _format = format;
         }
 
         _buffer.AddRange(pcm);
 
-        if (ComputeRms(pcm, format) > _settings.SilenceThresholdRms)
+        if (hasVoice)
         {
-            _lastLoudAt = DateTime.UtcNow;
+            _hasVoice = true;
+            _lastLoudAt = now;
         }
 
-        double bufferedSeconds = (DateTime.UtcNow - _bufferStartedAt).TotalSeconds;
+        double bufferedSeconds = (now - _bufferStartedAt).TotalSeconds;
         bool hardCap = bufferedSeconds >= _settings.ChunkHardCapSeconds;
         bool softCutOnTrailingSilence = bufferedSeconds >= _settings.ChunkSoftSeconds
-            && (DateTime.UtcNow - _lastLoudAt).TotalMilliseconds >= TrailingSilenceMs;
+            && (now - _lastLoudAt).TotalMilliseconds >= TrailingSilenceMs;
 
         if (hardCap || softCutOnTrailingSilence)
         {
@@ -70,6 +83,10 @@ public sealed class VoiceActivitySegmenter
 
         ChunkReady?.Invoke(this, new AudioChunk { Pcm = _buffer.ToArray(), Format = _format });
         _buffer.Clear();
+        _format = null;
+        _bufferStartedAt = DateTime.MinValue;
+        _lastLoudAt = DateTime.MinValue;
+        _hasVoice = false;
     }
 
     private static double ComputeRms(byte[] pcm, WaveFormatInfo format)
