@@ -32,8 +32,7 @@ jobs:
         run: |
           $python = Join-Path $env:RUNNER_TEMP "translator-venv\Scripts\python.exe"
           py -3.12 -m venv (Split-Path (Split-Path $python))
-          & $python -m pip install --disable-pip-version-check --upgrade pip
-          & $python -m pip install --disable-pip-version-check libretranslate==1.8.3
+          & $python -m pip install --disable-pip-version-check "setuptools<81" libretranslate==1.8.3
           "TRANSLATOR_EXE=$((Split-Path $python) + '\libretranslate.exe')" >> $env:GITHUB_ENV
 
       - name: Start and test local English-Spanish translation

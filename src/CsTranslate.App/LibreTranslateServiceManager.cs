@@ -49,8 +49,8 @@ internal sealed class LibreTranslateServiceManager : IDisposable
         if (!File.Exists(serverExe))
         {
             reportStatus("Descargando e instalando LibreTranslate. La primera descarga puede tardar...");
-            await RunPythonAsync(venvPython, ["-m", "pip", "install", "--disable-pip-version-check", "--upgrade", "pip"], cancellationToken);
-            await RunPythonAsync(venvPython, ["-m", "pip", "install", "--disable-pip-version-check", $"libretranslate=={LibreTranslateVersion}"], cancellationToken);
+
+            await RunPythonAsync(venvPython, ["-m", "pip", "install", "--disable-pip-version-check", "setuptools<81", $"libretranslate=={LibreTranslateVersion}"], cancellationToken);
         }
 
         if (_server is { HasExited: false })
