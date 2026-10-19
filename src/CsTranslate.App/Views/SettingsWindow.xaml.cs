@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using CsTranslate.App.ViewModels;
@@ -23,6 +24,7 @@ public partial class SettingsWindow : Window
     private ITranscriber? _transcriber;
     private TranslationPipeline? _pipeline;
     private bool _shuttingDown;
+    private AudioProcessInfo? _selectedAudioProcess;
 
     public SettingsWindow(OverlayViewModel overlayViewModel)
     {
@@ -35,6 +37,75 @@ public partial class SettingsWindow : Window
         WhisperModelPathBox.Text = _settings.WhisperModelPath;
         WhisperLanguageBox.Text = _settings.WhisperLanguage ?? string.Empty;
         LibreTranslateUrlBox.Text = _settings.LibreTranslateBaseUrl;
+        Loaded += async (_, _) => await RefreshAudioProcessesAsync();
+    }
+
+    private async void OnDetectAudioClicked(object sender, RoutedEventArgs e)
+    {
+        await RefreshAudioProcessesAsync();
+    }
+
+    private async Task RefreshAudioProcessesAsync()
+    {
+        int? previouslySelectedProcessId = _selectedAudioProcess?.ProcessId;
+        DetectAudioButton.IsEnabled = false;
+        StatusText.Text = "Buscando aplicaciones que estén reproduciendo audio...";
+
+        try
+        {
+            AudioProcessInfo[] activeProcesses = await Task.Run(
+                () => AudioProcessDiscovery.GetActiveAudioProcesses().ToArray());
+
+            ActiveAudioProcessesComboBox.ItemsSource = activeProcesses;
+            AudioProcessInfo? selection = previouslySelectedProcessId is int previousId
+                ? activeProcesses.FirstOrDefault(process => process.ProcessId == previousId)
+                : null;
+
+            if (selection is null && activeProcesses.Length == 1)
+            {
+                selection = activeProcesses[0];
+            }
+
+            ActiveAudioProcessesComboBox.SelectedItem = selection;
+            _selectedAudioProcess = selection;
+
+            if (activeProcesses.Length == 0)
+            {
+                StatusText.Text = "No detecté audio activo. Reproduce una voz o sonido y pulsa «Buscar audio».";
+            }
+            else if (selection is not null)
+            {
+                StatusText.Text = $"Fuente detectada: {selection.DisplayName}. Pulsa Iniciar para capturarla.";
+            }
+            else
+            {
+                StatusText.Text = $"Detecté {activeProcesses.Length} aplicaciones con audio. Selecciona la que quieres capturar.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _selectedAudioProcess = null;
+            ActiveAudioProcessesComboBox.ItemsSource = Array.Empty<AudioProcessInfo>();
+            StatusText.Text = $"No se pudieron detectar las aplicaciones de audio: {ex.Message}";
+        }
+        finally
+        {
+            DetectAudioButton.IsEnabled = true;
+        }
+    }
+
+    private void OnAudioProcessSelected(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (ActiveAudioProcessesComboBox.SelectedItem is not AudioProcessInfo selected)
+        {
+            return;
+        }
+
+        _selectedAudioProcess = selected;
+        ProcessNameBox.Text = selected.ProcessName;
+        StatusText.Text = _pipeline is null
+            ? $"Fuente seleccionada: {selected.DisplayName}. Pulsa Iniciar."
+            : $"Fuente seleccionada: {selected.DisplayName}. Pulsa Detener y después Iniciar para cambiar.";
     }
 
     private async void OnStartClicked(object sender, RoutedEventArgs e)
@@ -46,7 +117,25 @@ public partial class SettingsWindow : Window
         _settings.LibreTranslateBaseUrl = LibreTranslateUrlBox.Text.Trim();
         _settingsService.Save(_settings);
 
-        int? processId = ProcessLookup.FindProcessId(_settings.TargetProcessName);
+        int? processId = null;
+        if (_selectedAudioProcess is { } selectedAudio &&
+            string.Equals(_settings.TargetProcessName, selectedAudio.ProcessName, StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                using Process selectedProcess = Process.GetProcessById(selectedAudio.ProcessId);
+                if (!selectedProcess.HasExited)
+                {
+                    processId = selectedAudio.ProcessId;
+                }
+            }
+            catch (ArgumentException)
+            {
+                // The audio session ended after discovery; fall back to resolving the saved process name.
+            }
+        }
+
+        processId ??= ProcessLookup.FindProcessId(_settings.TargetProcessName);
         if (processId is null)
         {
             StatusText.Text = $"No se encontró una aplicación en ejecución llamada '{_settings.TargetProcessName}'.";
