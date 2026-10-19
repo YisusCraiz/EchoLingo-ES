@@ -29,10 +29,9 @@ public static class AudioProcessDiscovery
         {
             using (device)
             {
-                AudioSessionCollection sessions;
+                var sessions = device.AudioSessionManager.Sessions;
                 try
                 {
-                    sessions = device.AudioSessionManager.Sessions;
                 }
                 catch
                 {
@@ -46,7 +45,7 @@ public static class AudioProcessDiscovery
                     try
                     {
                         session = sessions[i];
-                        if (session.State != AudioSessionState.AudioSessionStateActive)
+                        if ((int)session.State != 1) // AUDCLNT_SESSIONSTATE_ACTIVE
                         {
                             continue;
                         }
