@@ -30,15 +30,6 @@ public static class AudioProcessDiscovery
             using (device)
             {
                 var sessions = device.AudioSessionManager.Sessions;
-                try
-                {
-                }
-                catch
-                {
-                    // An output device can disappear while Windows is enumerating endpoints.
-                    continue;
-                }
-
                 for (int i = 0; i < sessions.Count; i++)
                 {
                     AudioSessionControl? session = null;
