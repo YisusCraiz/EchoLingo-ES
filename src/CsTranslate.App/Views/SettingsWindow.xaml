@@ -101,8 +101,21 @@
 
         <TextBlock Text="APLICACIÓN E IDIOMA" Foreground="{StaticResource AccentBrush}" FontSize="11" FontWeight="Bold" Margin="0,0,0,8" />
 
-        <TextBlock Text="Aplicación de audio (ej. Discord.exe)" Style="{StaticResource FieldLabel}" />
-        <TextBox x:Name="ProcessNameBox" />
+        <TextBlock Text="Aplicación que reproduce el audio" Style="{StaticResource FieldLabel}" />
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+            <TextBox x:Name="ProcessNameBox" Width="270" Margin="0,0,8,0" />
+            <Button x:Name="DetectAudioButton" Content="Buscar audio" Style="{StaticResource SecondaryButton}" Padding="10,7" Click="OnDetectAudioClicked" />
+        </StackPanel>
+        <TextBlock Text="Aplicaciones con audio activo (selecciona una para usarla)" Style="{StaticResource FieldLabel}" />
+        <ComboBox x:Name="ActiveAudioProcessesComboBox"
+                  DisplayMemberPath="Label"
+                  MaxDropDownHeight="150"
+                  SelectionChanged="OnAudioProcessSelected"
+                  Background="{StaticResource SurfaceBrush}"
+                  Foreground="White"
+                  BorderBrush="{StaticResource BorderBrush}"
+                  Padding="8,7"
+                  Margin="0,0,0,14" />
 
         <TextBlock Text="Idioma de destino (ej. es, en)" Style="{StaticResource FieldLabel}" />
         <TextBox x:Name="TargetLanguageBox" />
