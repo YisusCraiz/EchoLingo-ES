@@ -170,7 +170,7 @@ public partial class SettingsWindow : Window
         if (!await translationClient.IsHealthyAsync())
         {
             MessageBoxResult choice = MessageBox.Show(
-                "EchoLingo puede preparar LibreTranslate en un entorno aislado dentro de tu usuario. Se necesita Python 3.12 y conexión a internet. La primera descarga de paquetes y modelos puede tardar varios minutos y ocupar bastante espacio. ¿Continuar?",
+                "EchoLingo puede preparar LibreTranslate en un entorno aislado dentro de tu usuario. Se necesita Python 3.13 y conexión a internet. La primera descarga de paquetes y modelos puede tardar varios minutos y ocupar bastante espacio. ¿Continuar?",
                 "Preparar traducción",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Information);
