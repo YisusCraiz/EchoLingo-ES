@@ -7,42 +7,58 @@
         Background="Transparent"
         Topmost="True"
         ShowInTaskbar="False"
-        ResizeMode="NoResize"
-        SizeToContent="Height"
+        ResizeMode="CanResizeWithGrip"
+        SizeToContent="Manual"
         Width="480"
+        Height="180"
+        MinWidth="320"
+        MinHeight="90"
+        MaxWidth="1200"
+        MaxHeight="700"
         WindowStartupLocation="Manual"
         Left="100"
-        Top="700"
-        MouseLeftButtonDown="OnMouseLeftButtonDown">
-    <Border Background="#CC101010"
+        Top="700">
+    <Border x:Name="DragSurface"
+            Background="#CC101010"
             CornerRadius="6"
             Padding="10"
             BorderBrush="#33FFFFFF"
-            BorderThickness="1">
-        <StackPanel>
+            BorderThickness="1"
+            MouseLeftButtonDown="OnMouseLeftButtonDown">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
             <TextBlock x:Name="EditModeHint"
-                       Text="Modo de edición: arrastra para mover. Presiona F9 para cerrar."
+                       Grid.Row="0"
+                       Text="Modo edición: arrastra para mover y usa la esquina inferior derecha para cambiar el tamaño. F9 para terminar."
                        Foreground="#FFD966"
                        FontSize="11"
+                       TextWrapping="Wrap"
                        Margin="0,0,0,6"
                        Visibility="Collapsed" />
-            <ItemsControl ItemsSource="{Binding Lines}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel Margin="0,0,0,6">
-                            <TextBlock Text="{Binding OriginalText}"
-                                       Foreground="#AAAAAA"
-                                       FontSize="12"
-                                       TextWrapping="Wrap" />
-                            <TextBlock Text="{Binding TranslatedText}"
-                                       Foreground="White"
-                                       FontSize="16"
-                                       FontWeight="SemiBold"
-                                       TextWrapping="Wrap" />
-                        </StackPanel>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </StackPanel>
+            <ScrollViewer Grid.Row="1"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+                <ItemsControl ItemsSource="{Binding Lines}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="0,0,0,6">
+                                <TextBlock Text="{Binding OriginalText}"
+                                           Foreground="#AAAAAA"
+                                           FontSize="12"
+                                           TextWrapping="Wrap" />
+                                <TextBlock Text="{Binding TranslatedText}"
+                                           Foreground="White"
+                                           FontSize="16"
+                                           FontWeight="SemiBold"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
     </Border>
 </Window>
