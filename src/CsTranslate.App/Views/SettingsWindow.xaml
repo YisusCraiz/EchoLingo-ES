@@ -113,6 +113,16 @@
                         <TextBlock Text="Reproduce una voz o sonido y pulsa Buscar audio."
                                    Style="{StaticResource FieldLabel}"
                                    TextWrapping="Wrap" />
+                        <Button x:Name="DetectAudioButton"
+                                Content="Buscar audio ahora"
+                                Style="{StaticResource SecondaryButton}"
+                                HorizontalAlignment="Left"
+                                Padding="14,8"
+                                Margin="0,2,0,8"
+                                Click="OnDetectAudioClicked" />
+                        <TextBlock Text="Después selecciona la aplicación detectada."
+                                   Style="{StaticResource FieldLabel}"
+                                   Margin="0,0,0,2" />
                         <ComboBox x:Name="ActiveAudioProcessesComboBox"
                                   DisplayMemberPath="Label"
                                   MaxDropDownHeight="180"
@@ -121,13 +131,7 @@
                                   Foreground="White"
                                   BorderBrush="{StaticResource BorderBrush}"
                                   Padding="9,8"
-                                  Margin="0,2,0,8" />
-                        <Button x:Name="DetectAudioButton"
-                                Content="Buscar audio ahora"
-                                Style="{StaticResource SecondaryButton}"
-                                HorizontalAlignment="Left"
-                                Padding="14,8"
-                                Click="OnDetectAudioClicked" />
+                                  Margin="0,2,0,0" />
                     </StackPanel>
                 </Border>
 
