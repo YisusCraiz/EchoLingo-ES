@@ -39,6 +39,7 @@ public partial class OverlayWindow : Window
 
         InitializeComponent();
         DataContext = ViewModel;
+        SourceInitialized += OnSourceInitialized;
 
         Width = Clamp(_settings.Overlay.Width, MinWidth, MaxWidth);
         Height = Clamp(_settings.Overlay.Height, MinHeight, MaxHeight);
@@ -110,7 +111,18 @@ public partial class OverlayWindow : Window
         _settings.Overlay.X = Left;
         _settings.Overlay.Y = Top;
         _settings.Overlay.Opacity = Opacity;
-        _settingsService.Save(_settings);
+        try
+        {
+            _settingsService.Save(_settings);
+        }
+        catch (IOException)
+        {
+            // Keep the subtitle overlay responsive if settings cannot be written temporarily.
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Keep the subtitle overlay responsive if settings cannot be written temporarily.
+        }
     }
 
     private void OnSourceInitialized(object? sender, EventArgs e)
