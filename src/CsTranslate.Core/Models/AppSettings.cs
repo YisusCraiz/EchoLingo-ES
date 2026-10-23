@@ -5,6 +5,7 @@ public sealed class OverlaySettings
     public double X { get; set; } = 100;
     public double Y { get; set; } = 700;
     public double Width { get; set; } = 480;
+    public double Height { get; set; } = 180;
     public double Opacity { get; set; } = 0.85;
     public int MaxLines { get; set; } = 6;
 }

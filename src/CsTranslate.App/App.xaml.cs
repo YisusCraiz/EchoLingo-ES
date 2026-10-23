@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Threading;
 using CsTranslate.App.ViewModels;
 using CsTranslate.App.Views;
+using CsTranslate.Core.Settings;
 
 namespace CsTranslate.App;
 
@@ -14,10 +15,13 @@ public partial class App : Application
         DispatcherUnhandledException += OnDispatcherUnhandledException;
         try
         {
-            var overlayViewModel = new OverlayViewModel();
-            var overlay = new OverlayWindow(overlayViewModel);
+            var settingsService = new SettingsService();
+            var settings = settingsService.Load();
+            var overlayViewModel = new OverlayViewModel(settings.Overlay.MaxLines);
+            var overlay = new OverlayWindow(overlayViewModel, settings, settingsService);
             overlay.Show();
-            var settingsWindow = new SettingsWindow(overlayViewModel);
+
+            var settingsWindow = new SettingsWindow(overlayViewModel, settings, settingsService);
             settingsWindow.Show();
             _ = UpdateChecker.CheckAndPromptAsync();
         }

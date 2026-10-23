@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
+using Microsoft.Win32;
 using CsTranslate.App.ViewModels;
 using CsTranslate.Audio;
 using CsTranslate.Cleanup;
@@ -15,21 +16,22 @@ namespace CsTranslate.App.Views;
 
 public partial class SettingsWindow : Window
 {
-    private readonly SettingsService _settingsService = new();
+    private readonly SettingsService _settingsService;
     private readonly OverlayViewModel _overlayViewModel;
     private readonly LibreTranslateServiceManager _translationService = new();
 
-    private AppSettings _settings;
+    private readonly AppSettings _settings;
     private IAudioCaptureSource? _captureSource;
     private ITranscriber? _transcriber;
     private TranslationPipeline? _pipeline;
     private bool _shuttingDown;
     private AudioProcessInfo? _selectedAudioProcess;
 
-    public SettingsWindow(OverlayViewModel overlayViewModel)
+    public SettingsWindow(OverlayViewModel overlayViewModel, AppSettings settings, SettingsService settingsService)
     {
         _overlayViewModel = overlayViewModel;
-        _settings = _settingsService.Load();
+        _settings = settings;
+        _settingsService = settingsService;
         InitializeComponent();
 
         ProcessNameBox.Text = _settings.TargetProcessName;
@@ -104,8 +106,24 @@ public partial class SettingsWindow : Window
         _selectedAudioProcess = selected;
         ProcessNameBox.Text = selected.ProcessName;
         StatusText.Text = _pipeline is null
-            ? $"Fuente seleccionada: {selected.DisplayName}. Pulsa Iniciar."
+            ? $"Fuente seleccionada: {selected.DisplayName}. Pulsa Iniciar subtítulos."
             : $"Fuente seleccionada: {selected.DisplayName}. Pulsa Detener y después Iniciar para cambiar.";
+    }
+
+    private void OnBrowseModelClicked(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = "Selecciona el modelo de Whisper",
+            Filter = "Modelos Whisper (*.bin)|*.bin|Todos los archivos (*.*)|*.*",
+            CheckFileExists = true,
+            FileName = Path.GetFileName(WhisperModelPathBox.Text)
+        };
+
+        if (dialog.ShowDialog(this) == true)
+        {
+            WhisperModelPathBox.Text = dialog.FileName;
+        }
     }
 
     private async void OnStartClicked(object sender, RoutedEventArgs e)
@@ -152,7 +170,7 @@ public partial class SettingsWindow : Window
         if (!await translationClient.IsHealthyAsync())
         {
             MessageBoxResult choice = MessageBox.Show(
-                "EchoLingo puede preparar LibreTranslate en un entorno aislado dentro de tu usuario. Se necesita Python 3.12 y conexión a internet. La primera descarga de paquetes y modelos puede tardar varios minutos y ocupar bastante espacio. ¿Continuar?",
+                "EchoLingo puede preparar LibreTranslate en un entorno aislado dentro de tu usuario. Se necesita Python 3.13 y conexión a internet. La primera descarga de paquetes y modelos puede tardar varios minutos y ocupar bastante espacio. ¿Continuar?",
                 "Preparar traducción",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Information);
@@ -199,7 +217,7 @@ public partial class SettingsWindow : Window
 
             _pipeline.Start();
 
-            StatusText.Text = $"Traduciendo: {_settings.TargetProcessName} (PID {processId}) -> {_settings.TargetLanguageCode}";
+            StatusText.Text = $"Traduciendo audio de {selectedAudioName()} -> {_settings.TargetLanguageCode}.";
             StopButton.IsEnabled = true;
         }
         catch (Exception ex)
@@ -216,6 +234,9 @@ public partial class SettingsWindow : Window
         }
     }
 
+    private string selectedAudioName() =>
+        _selectedAudioProcess?.DisplayName ?? _settings.TargetProcessName;
+
     private async void OnStopClicked(object sender, RoutedEventArgs e)
     {
         StopButton.IsEnabled = false;
@@ -223,7 +244,7 @@ public partial class SettingsWindow : Window
 
         await StopPipelineIfRunningAsync();
 
-        StatusText.Text = "Detenido.";
+        StatusText.Text = "Subtítulos detenidos.";
         StartButton.IsEnabled = true;
     }
 
@@ -246,7 +267,7 @@ public partial class SettingsWindow : Window
         StartButton.IsEnabled = false;
         StopButton.IsEnabled = false;
         CloseButton.IsEnabled = false;
-        StatusText.Text = "Cerrando...";
+        StatusText.Text = "Cerrando EchoLingo...";
 
         await StopPipelineIfRunningAsync();
         _translationService.Dispose();
