@@ -45,10 +45,29 @@ public partial class SettingsWindow : Window
         WhisperModelPathBox.Text = _settings.WhisperModelPath;
         WhisperLanguageBox.Text = _settings.WhisperLanguage ?? string.Empty;
         LibreTranslateUrlBox.Text = _settings.LibreTranslateBaseUrl;
+        TargetLanguagePicker.SelectedValue = _settings.TargetLanguageCode.Trim().ToLowerInvariant();
+        SpokenLanguagePicker.SelectedValue = _settings.WhisperLanguage?.Trim().ToLowerInvariant() ?? string.Empty;
+        Height = Math.Min(Height, Math.Max(MinHeight, SystemParameters.WorkArea.Height - 24));
         Loaded += async (_, _) => await RefreshAudioProcessesAsync();
         _audioMeterTimer.Tick += (_, _) => UpdateAudioMeter();
         _audioMeterTimer.Start();
         Closed += (_, _) => _audioMeterTimer.Stop();
+    }
+
+    private void OnTargetLanguageChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (TargetLanguagePicker.SelectedValue is string code && TargetLanguageBox is not null)
+        {
+            TargetLanguageBox.Text = code;
+        }
+    }
+
+    private void OnSpokenLanguageChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (SpokenLanguagePicker.SelectedValue is string code && WhisperLanguageBox is not null)
+        {
+            WhisperLanguageBox.Text = code;
+        }
     }
 
     private async void OnDetectAudioClicked(object sender, RoutedEventArgs e)
