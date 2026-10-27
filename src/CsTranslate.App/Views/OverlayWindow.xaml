@@ -38,6 +38,9 @@
                        TextWrapping="Wrap"
                        Margin="0,0,0,6"
                        Visibility="Collapsed" />
+            <TextBlock x:Name="OverlayPlaceholder" Grid.Row="1"
+                       Text="Aquí aparecerán los subtítulos. Inicia la captura y reproduce una voz. F9 permite mover y cambiar el tamaño."
+                       Foreground="#CCCCCC" FontSize="14" TextWrapping="Wrap" />
             <ScrollViewer Grid.Row="1"
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled">
