@@ -50,7 +50,7 @@ public partial class OverlayWindow : Window
         Top = ClampPosition(_settings.Overlay.Y, SystemParameters.VirtualScreenTop,
             SystemParameters.VirtualScreenTop + SystemParameters.VirtualScreenHeight - Height);
 
-        Visibility = ViewModel.Lines.Count == 0 ? Visibility.Hidden : Visibility.Visible;
+        OverlayPlaceholder.Visibility = ViewModel.Lines.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         ViewModel.Lines.CollectionChanged += OnLinesChanged;
 
         _saveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(350) };
@@ -147,6 +147,20 @@ public partial class OverlayWindow : Window
         }
 
         return IntPtr.Zero;
+    }
+
+    public void ShowPreview()
+    {
+        var area = SystemParameters.WorkArea;
+        Width = Math.Min(Width, Math.Max(MinWidth, area.Width - 32));
+        Height = Math.Min(Height, Math.Max(MinHeight, area.Height - 32));
+        Left = area.Left + Math.Max(0, (area.Width - Width) / 2);
+        Top = area.Top + Math.Max(0, area.Height - Height - 32);
+        Show();
+        if (!_editMode)
+        {
+            ToggleEditMode();
+        }
     }
 
     public void ToggleEditMode()
