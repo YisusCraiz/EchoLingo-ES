@@ -26,7 +26,8 @@ public sealed class ProcessLoopbackCapture : IAudioCaptureSource
     private const int Channels = 2;
     private const int BitsPerSample = 16;
     private const uint WaveFormatPcm = 1;
-    private const uint AudclntBufferflagsSilent = 0x1;
+    // AUDCLNT_BUFFERFLAGS_SILENT = 0x2; 0x1 means DATA_DISCONTINUITY.
+    private const uint AudclntBufferflagsSilent = 0x2;
     private const uint WaitObject0 = 0;
 
     private readonly int _processId;
@@ -179,7 +180,7 @@ public sealed class ProcessLoopbackCapture : IAudioCaptureSource
             if (bytesRecorded > 0)
             {
                 var buffer = new byte[bytesRecorded];
-                if ((flags & AudclntBufferflagsSilent) == 0)
+                if ((flags & AudclntBufferflagsSilent) == 0 && data != null)
                 {
                     Marshal.Copy((IntPtr)data, buffer, 0, bytesRecorded);
                 }

@@ -204,6 +204,16 @@
         </ScrollViewer>
 
         <StackPanel Grid.Row="1" Margin="0,12,0,0">
+            <TextBlock Text="Nivel de audio de la aplicación seleccionada"
+                       Foreground="White" FontSize="12" Margin="0,0,0,4" />
+            <ProgressBar x:Name="AudioLevelMeter" Minimum="0" Maximum="100" Value="0"
+                         Height="12" Foreground="#FF48C78E" Background="#FF303030" />
+            <TextBlock x:Name="AudioLevelText" Text="Inicia los subtítulos para medir el audio."
+                       Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap"
+                       FontSize="12" Margin="0,4,0,8" />
+            <Button Content="Mostrar / recuperar recuadro de subtítulos"
+                    Style="{StaticResource SecondaryButton}" Padding="12,8"
+                    Margin="0,0,0,8" Click="OnPreviewOverlayClicked" />
             <Border Background="{StaticResource SurfaceBrush}"
                     BorderBrush="{StaticResource BorderBrush}"
                     BorderThickness="1"

@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
+using System.Windows.Threading;
 using Microsoft.Win32;
 using CsTranslate.App.ViewModels;
 using CsTranslate.Audio;
@@ -25,6 +26,11 @@ public partial class SettingsWindow : Window
     private ITranscriber? _transcriber;
     private TranslationPipeline? _pipeline;
     private bool _shuttingDown;
+    private bool _starting;
+    private double _audioPeak;
+    private long _lastAudioTicks;
+    private long _captureStartedTicks;
+    private readonly DispatcherTimer _audioMeterTimer = new() { Interval = TimeSpan.FromMilliseconds(100) };
     private AudioProcessInfo? _selectedAudioProcess;
 
     public SettingsWindow(OverlayViewModel overlayViewModel, AppSettings settings, SettingsService settingsService)
@@ -40,6 +46,9 @@ public partial class SettingsWindow : Window
         WhisperLanguageBox.Text = _settings.WhisperLanguage ?? string.Empty;
         LibreTranslateUrlBox.Text = _settings.LibreTranslateBaseUrl;
         Loaded += async (_, _) => await RefreshAudioProcessesAsync();
+        _audioMeterTimer.Tick += (_, _) => UpdateAudioMeter();
+        _audioMeterTimer.Start();
+        Closed += (_, _) => _audioMeterTimer.Stop();
     }
 
     private async void OnDetectAudioClicked(object sender, RoutedEventArgs e)
@@ -126,7 +135,70 @@ public partial class SettingsWindow : Window
         }
     }
 
+    private void OnPreviewOverlayClicked(object sender, RoutedEventArgs e)
+    {
+        Application.Current.Windows.OfType<OverlayWindow>().FirstOrDefault()?.ShowPreview();
+    }
+
+    private void OnCaptureAudio(object? sender, AudioCapturedEventArgs e)
+    {
+        // ProcessLoopbackCapture delivers signed 16-bit PCM. Do not block its capture thread.
+        int count = Math.Min(e.BytesRecorded, e.Buffer.Length);
+        double peak = 0;
+        for (int offset = 0; offset + 1 < count; offset += 2)
+        {
+            peak = Math.Max(peak, Math.Abs((int)BitConverter.ToInt16(e.Buffer, offset)) / 32768.0);
+        }
+        double previous = Volatile.Read(ref _audioPeak);
+        Volatile.Write(ref _audioPeak, Math.Max(previous, peak));
+        if (peak > 0.001)
+        {
+            Interlocked.Exchange(ref _lastAudioTicks, DateTime.UtcNow.Ticks);
+        }
+    }
+
+    private void UpdateAudioMeter()
+    {
+        double peak = Interlocked.Exchange(ref _audioPeak, 0);
+        AudioLevelMeter.Value = Math.Clamp(peak * 100, 0, 100);
+        if (_pipeline is null)
+        {
+            AudioLevelText.Text = "Inicia los subtítulos para medir el audio.";
+            return;
+        }
+        long last = Interlocked.Read(ref _lastAudioTicks);
+        double seconds = TimeSpan.FromTicks(DateTime.UtcNow.Ticks - Math.Max(last, _captureStartedTicks)).TotalSeconds;
+        AudioLevelText.Text = seconds < 2 && last != 0
+            ? "Se está recibiendo audio. El nivel indica sonido, no necesariamente voz."
+            : seconds >= 5
+                ? "Sin señal reciente: reproduce una voz y comprueba que elegiste la aplicación correcta."
+                : "Captura iniciada. Esperando audio de la aplicación...";
+    }
+
     private async void OnStartClicked(object sender, RoutedEventArgs e)
+    {
+        if (_starting || _pipeline is not null || _shuttingDown)
+        {
+            return;
+        }
+        _starting = true;
+        StartButton.IsEnabled = false;
+        try
+        {
+            await StartTranslationAsync();
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = $"No se pudo iniciar: {ex.Message}";
+        }
+        finally
+        {
+            _starting = false;
+            StartButton.IsEnabled = _pipeline is null && !_shuttingDown;
+        }
+    }
+
+    private async Task StartTranslationAsync()
     {
         _settings.TargetProcessName = ProcessNameBox.Text.Trim();
         _settings.TargetLanguageCode = TargetLanguageBox.Text.Trim();
@@ -197,12 +269,20 @@ public partial class SettingsWindow : Window
             }
         }
 
+        if (_shuttingDown)
+        {
+            return;
+        }
         StartButton.IsEnabled = false;
-        StatusText.Text = "Iniciando...";
+        StatusText.Text = "Iniciando captura de audio...";
 
         try
         {
             _captureSource = new ProcessLoopbackCapture(processId.Value);
+            _captureSource.DataAvailable += OnCaptureAudio;
+            Interlocked.Exchange(ref _lastAudioTicks, 0);
+            Interlocked.Exchange(ref _audioPeak, 0);
+            _captureStartedTicks = DateTime.UtcNow.Ticks;
             _transcriber = new WhisperTranscriber(_settings.WhisperModelPath, _settings.WhisperLanguage);
             var cleanup = new GlossaryCleanupService(Path.Combine(AppContext.BaseDirectory, "Rules"));
 
@@ -224,6 +304,10 @@ public partial class SettingsWindow : Window
         {
             StatusText.Text = $"No se pudo iniciar: {ex.Message}";
 
+            if (_captureSource is not null)
+            {
+                _captureSource.DataAvailable -= OnCaptureAudio;
+            }
             _pipeline = null;
             _captureSource?.Dispose();
             _captureSource = null;
@@ -277,6 +361,11 @@ public partial class SettingsWindow : Window
 
     private async Task StopPipelineIfRunningAsync()
     {
+        if (_captureSource is not null)
+        {
+            _captureSource.DataAvailable -= OnCaptureAudio;
+        }
+        Interlocked.Exchange(ref _audioPeak, 0);
         if (_pipeline is not null)
         {
             await _pipeline.StopAsync();
