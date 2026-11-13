@@ -11,7 +11,7 @@ public sealed class OverlayViewModel
 
     public OverlayViewModel(int maxLines = 6)
     {
-        _maxLines = maxLines;
+        _maxLines = Math.Clamp(maxLines, 250, 1000);
     }
 
     /// <summary>Must be called on the UI thread (the pipeline marshals via Dispatcher).</summary>
