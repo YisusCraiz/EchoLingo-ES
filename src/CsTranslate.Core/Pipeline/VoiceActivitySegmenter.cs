@@ -55,8 +55,8 @@ public sealed class VoiceActivitySegmenter
         }
 
         double bufferedSeconds = (now - _bufferStartedAt).TotalSeconds;
-        bool hardCap = bufferedSeconds >= _settings.ChunkHardCapSeconds;
-        bool softCutOnTrailingSilence = bufferedSeconds >= _settings.ChunkSoftSeconds
+        bool hardCap = bufferedSeconds >= Math.Min(_settings.ChunkHardCapSeconds, 4.0);
+        bool softCutOnTrailingSilence = bufferedSeconds >= Math.Min(_settings.ChunkSoftSeconds, 0.55)
             && (now - _lastLoudAt).TotalMilliseconds >= TrailingSilenceMs;
 
         if (hardCap || softCutOnTrailingSilence)
