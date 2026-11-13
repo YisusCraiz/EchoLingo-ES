@@ -168,7 +168,7 @@
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
                                 <TextBlock Text="02  Idiomas" Style="{StaticResource Heading}" />
-                                <TextBlock Text="¿En qué idioma hablan y cómo quieres leerlo?" Style="{StaticResource Muted}" />
+                                <TextBlock Text="Elige qué idioma aceptar y a cuál traducir. Con «Detectar idioma» se aceptan ambos." Style="{StaticResource Muted}" />
                                 <Grid>
                                     <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="16" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
                                     <StackPanel>
@@ -195,7 +195,7 @@
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
                                 <TextBlock Text="03  Tus subtítulos" Style="{StaticResource Heading}" />
-                                <TextBlock Text="Coloca el recuadro donde te resulte cómodo. F9 activa o termina la edición; arrastra la esquina para cambiar su tamaño."
+                                <TextBlock Text="F9 abre el historial: usa la rueda para leer mensajes anteriores. Pulsa F9 otra vez para seguir en vivo. En juegos, usa pantalla completa sin bordes."
                                            Style="{StaticResource Muted}" />
                                 <Button Content="Mostrar y colocar subtítulos" Click="OnPreviewOverlayClicked" HorizontalAlignment="Left" />
                             </StackPanel>
