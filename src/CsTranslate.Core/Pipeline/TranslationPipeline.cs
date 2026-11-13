@@ -31,14 +31,16 @@ public sealed class TranslationPipeline : IAsyncDisposable
     private readonly GlossaryCleanupService _cleanup;
     private readonly ITranslationClient _translationClient;
     private readonly AppSettings _settings;
+    private readonly string? _sourceLanguage;
     private readonly Action<TranslatedLine> _onTranslatedLine;
     private readonly Action<Exception>? _onError;
 
     private readonly VoiceActivitySegmenter _segmenter;
     private readonly Channel<AudioChunk> _audioChunks = Channel.CreateBounded<AudioChunk>(
-        new BoundedChannelOptions(4) { FullMode = BoundedChannelFullMode.DropOldest });
+        new BoundedChannelOptions(2) { FullMode = BoundedChannelFullMode.DropOldest });
     private readonly Channel<TranscriptSegment> _transcripts = Channel.CreateBounded<TranscriptSegment>(8);
-    private readonly Channel<TranscriptSegment> _cleaned = Channel.CreateUnbounded<TranscriptSegment>();
+    private readonly Channel<TranscriptSegment> _cleaned = Channel.CreateBounded<TranscriptSegment>(
+        new BoundedChannelOptions(4) { FullMode = BoundedChannelFullMode.DropOldest });
 
     private CancellationTokenSource? _cts;
     private Task? _sttTask;
@@ -59,6 +61,9 @@ public sealed class TranslationPipeline : IAsyncDisposable
         _cleanup = cleanup;
         _translationClient = translationClient;
         _settings = settings;
+        string? source = settings.WhisperLanguage?.Trim();
+        _sourceLanguage = string.IsNullOrEmpty(source) || source.Equals("auto", StringComparison.OrdinalIgnoreCase)
+            ? null : source;
         _onTranslatedLine = onTranslatedLine;
         _onError = onError;
         _segmenter = new VoiceActivitySegmenter(settings.Vad);
@@ -116,7 +121,8 @@ public sealed class TranslationPipeline : IAsyncDisposable
 
                 await foreach (TranscriptSegment segment in _transcriber.TranscribeAsync(resampled, token))
                 {
-                    if (!string.IsNullOrWhiteSpace(segment.Text) && !IsNonSpeechHallucination(segment.Text))
+                    if (!string.IsNullOrWhiteSpace(segment.Text) && !IsNonSpeechHallucination(segment.Text) &&
+                        (_sourceLanguage is null || string.Equals(segment.Language, _sourceLanguage, StringComparison.OrdinalIgnoreCase)))
                     {
                         await _transcripts.Writer.WriteAsync(segment, token);
                     }
@@ -169,6 +175,12 @@ public sealed class TranslationPipeline : IAsyncDisposable
             {
                 try
                 {
+                    if (string.Equals(segment.Language, _settings.TargetLanguageCode, StringComparison.OrdinalIgnoreCase))
+                    {
+                        _onTranslatedLine(new TranslatedLine(segment.Text, segment.Text, segment.Language, DateTimeOffset.Now));
+                        continue;
+                    }
+
                     TranslationResult result = await _translationClient.TranslateAsync(
                         segment.Text,
                         _settings.TargetLanguageCode,

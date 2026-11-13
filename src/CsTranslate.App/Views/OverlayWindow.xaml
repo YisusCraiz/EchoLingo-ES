@@ -7,6 +7,7 @@
         Background="Transparent"
         Topmost="True"
         ShowInTaskbar="False"
+        ShowActivated="False"
         ResizeMode="CanResizeWithGrip"
         SizeToContent="Manual"
         Width="480"
@@ -23,16 +24,15 @@
             CornerRadius="6"
             Padding="10"
             BorderBrush="#33FFFFFF"
-            BorderThickness="1"
-            MouseLeftButtonDown="OnMouseLeftButtonDown">
+            BorderThickness="1">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <TextBlock x:Name="EditModeHint"
+            <TextBlock x:Name="EditModeHint" MouseLeftButtonDown="OnMouseLeftButtonDown" Background="Transparent"
                        Grid.Row="0"
-                       Text="Modo edición: arrastra para mover y usa la esquina inferior derecha para cambiar el tamaño. F9 para terminar."
+                       Text="Usa la rueda para leer el historial. Arrastra esta barra para mover el recuadro. F9 vuelve a los subtítulos en vivo."
                        Foreground="#FFD966"
                        FontSize="11"
                        TextWrapping="Wrap"
@@ -41,7 +41,7 @@
             <TextBlock x:Name="OverlayPlaceholder" Grid.Row="1"
                        Text="Aquí aparecerán los subtítulos. Inicia la captura y reproduce una voz. F9 permite mover y cambiar el tamaño."
                        Foreground="#CCCCCC" FontSize="14" TextWrapping="Wrap" />
-            <ScrollViewer Grid.Row="1"
+            <ScrollViewer x:Name="CaptionScroll" Grid.Row="1"
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled">
                 <ItemsControl ItemsSource="{Binding Lines}">
