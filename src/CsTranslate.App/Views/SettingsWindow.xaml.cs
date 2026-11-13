@@ -302,7 +302,7 @@ public partial class SettingsWindow : Window
             Interlocked.Exchange(ref _lastAudioTicks, 0);
             Interlocked.Exchange(ref _audioPeak, 0);
             _captureStartedTicks = DateTime.UtcNow.Ticks;
-            _transcriber = new WhisperTranscriber(_settings.WhisperModelPath, _settings.WhisperLanguage);
+            _transcriber = new WhisperTranscriber(_settings.WhisperModelPath);
             var cleanup = new GlossaryCleanupService(Path.Combine(AppContext.BaseDirectory, "Rules"));
 
             _pipeline = new TranslationPipeline(
