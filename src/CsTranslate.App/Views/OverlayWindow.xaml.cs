@@ -24,6 +24,15 @@ public partial class OverlayWindow : Window
     [DllImport("user32.dll", SetLastError = true)]
     private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    private static extern bool SetWindowPos(IntPtr hwnd, IntPtr insertAfter, int x, int y, int width, int height, uint flags);
+
+    private readonly DispatcherTimer _foregroundTimer = new() { Interval = TimeSpan.FromMilliseconds(500) };
+    private IntPtr _lastForeground;
+
     private readonly AppSettings _settings;
     private readonly SettingsService _settingsService;
     private readonly DispatcherTimer _saveTimer;
@@ -60,10 +69,26 @@ public partial class OverlayWindow : Window
             SaveOverlaySettings();
         };
 
+        _foregroundTimer.Tick += (_, _) =>
+        {
+            IntPtr foreground = GetForegroundWindow();
+            if (foreground != _lastForeground)
+            {
+                _lastForeground = foreground;
+                if (IsVisible && !_editMode && _hwndSource is not null)
+                {
+                    // HWND_TOPMOST, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE.
+                    SetWindowPos(_hwndSource.Handle, new IntPtr(-1), 0, 0, 0, 0, 0x13);
+                }
+            }
+        };
+        _foregroundTimer.Start();
+
         SizeChanged += (_, _) => QueueSettingsSave();
         LocationChanged += (_, _) => QueueSettingsSave();
         Closed += (_, _) =>
         {
+            _foregroundTimer.Stop();
             _saveTimer.Stop();
             SaveOverlaySettings();
             ViewModel.Lines.CollectionChanged -= OnLinesChanged;
@@ -91,7 +116,14 @@ public partial class OverlayWindow : Window
 
     private void OnLinesChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        Visibility = ViewModel.Lines.Count == 0 ? Visibility.Hidden : Visibility.Visible;
+        OverlayPlaceholder.Visibility = ViewModel.Lines.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        if (!_editMode)
+        {
+            Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
+            {
+                if (!_editMode) CaptionScroll.ScrollToEnd();
+            }));
+        }
     }
 
     private void QueueSettingsSave()
@@ -168,6 +200,7 @@ public partial class OverlayWindow : Window
         _editMode = !_editMode;
         ClickThrough.SetEnabled(this, enabled: !_editMode);
         EditModeHint.Visibility = _editMode ? Visibility.Visible : Visibility.Collapsed;
+        if (!_editMode) CaptionScroll.ScrollToEnd();
     }
 
     private void OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
