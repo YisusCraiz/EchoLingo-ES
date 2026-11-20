@@ -36,6 +36,7 @@ public class VoiceActivitySegmenterTests
         {
             ChunkSoftSeconds = 0.01,
             ChunkHardCapSeconds = 10,
+            SentencePauseMilliseconds = 300,
             SilenceThresholdRms = 0.01,
         });
         var emitted = new List<AudioChunk>();
@@ -47,6 +48,55 @@ public class VoiceActivitySegmenterTests
 
         Assert.Single(emitted);
         Assert.NotEmpty(emitted[0].Pcm);
+    }
+
+    [Fact]
+    public void ShortPauseInsideSentence_KeepsSpeechTogether_ThenFlushesWithoutMorePackets()
+    {
+        var clock = new TestClock();
+        var segmenter = new VoiceActivitySegmenter(new VadSettings(), clock);
+        var chunks = new List<AudioChunk>();
+        segmenter.ChunkReady += (_, chunk) => chunks.Add(chunk);
+        segmenter.Feed(CreateLoudPcm(320), Format);
+        clock.Advance(500);
+        segmenter.CheckForSilence();
+        Assert.Empty(chunks);
+        segmenter.Feed(CreateLoudPcm(320), Format);
+        clock.Advance(899);
+        segmenter.CheckForSilence();
+        Assert.Empty(chunks);
+        clock.Advance(1);
+        segmenter.CheckForSilence();
+        Assert.Single(chunks);
+        Assert.Equal(1280, chunks[0].Pcm.Length);
+        segmenter.CheckForSilence();
+        Assert.Single(chunks);
+    }
+
+    [Fact]
+    public void ContinuousSpeech_IsNotCutAtFourSeconds_ButHasSafetyLimit()
+    {
+        var clock = new TestClock();
+        var segmenter = new VoiceActivitySegmenter(new VadSettings(), clock);
+        int emitted = 0;
+        segmenter.ChunkReady += (_, _) => emitted++;
+        segmenter.Feed(CreateLoudPcm(320), Format);
+        for (int second = 1; second <= 11; second++)
+        {
+            clock.Advance(1000);
+            segmenter.Feed(CreateLoudPcm(320), Format);
+            Assert.Equal(0, emitted);
+        }
+        clock.Advance(1000);
+        segmenter.Feed(CreateLoudPcm(320), Format);
+        Assert.Equal(1, emitted);
+    }
+
+    private sealed class TestClock : TimeProvider
+    {
+        private DateTimeOffset _now = DateTimeOffset.UnixEpoch;
+        public override DateTimeOffset GetUtcNow() => _now;
+        public void Advance(int milliseconds) => _now += TimeSpan.FromMilliseconds(milliseconds);
     }
 
     private static byte[] CreateLoudPcm(int sampleCount)
