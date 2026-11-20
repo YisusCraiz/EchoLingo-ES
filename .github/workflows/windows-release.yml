@@ -86,7 +86,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create $env:GITHUB_REF_NAME "artifacts/EchoLingo-ES-Setup.exe" --repo $env:GITHUB_REPOSITORY --title "EchoLingo ES $env:APP_VERSION" --generate-notes --prerelease
+          gh release view $env:GITHUB_REF_NAME --repo $env:GITHUB_REPOSITORY *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $env:GITHUB_REF_NAME "artifacts/EchoLingo-ES-Setup.exe" --repo $env:GITHUB_REPOSITORY --clobber
+          } else {
+            gh release create $env:GITHUB_REF_NAME "artifacts/EchoLingo-ES-Setup.exe" --repo $env:GITHUB_REPOSITORY --title "EchoLingo ES $env:APP_VERSION" --generate-notes --prerelease
+          }
+          if ($LASTEXITCODE -ne 0) {
+            throw "No se pudo publicar el instalador en GitHub Releases."
+          }
       - name: Guardar instalador como artefacto de prueba
         if: startsWith(github.ref, 'refs/tags/v')
         uses: actions/upload-artifact@v4
