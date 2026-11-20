@@ -43,6 +43,7 @@ public sealed class TranslationPipeline : IAsyncDisposable
         new BoundedChannelOptions(4) { FullMode = BoundedChannelFullMode.DropOldest });
 
     private CancellationTokenSource? _cts;
+    private Timer? _silenceTimer;
     private Task? _sttTask;
     private Task? _cleanupTask;
     private Task? _translationTask;
@@ -77,6 +78,7 @@ public sealed class TranslationPipeline : IAsyncDisposable
         _segmenter.ChunkReady += (_, chunk) => _audioChunks.Writer.TryWrite(chunk);
         _captureSource.DataAvailable += OnAudioDataAvailable;
         _captureSource.Start();
+        _silenceTimer = new Timer(_ => _segmenter.CheckForSilence(), null, 100, 100);
 
         _sttTask = Task.Run(() => RunSttLoopAsync(token), CancellationToken.None);
         _cleanupTask = Task.Run(() => RunCleanupLoopAsync(token), CancellationToken.None);
@@ -85,6 +87,8 @@ public sealed class TranslationPipeline : IAsyncDisposable
 
     public async Task StopAsync()
     {
+        _silenceTimer?.Dispose();
+        _silenceTimer = null;
         _captureSource.DataAvailable -= OnAudioDataAvailable;
         _captureSource.Stop();
         _segmenter.Flush();
@@ -119,14 +123,33 @@ public sealed class TranslationPipeline : IAsyncDisposable
                 using MemoryStream wav = AudioResampler.WrapAsWav(chunk.Pcm, chunk.Format);
                 using MemoryStream resampled = AudioResampler.ResampleToWhisperFormat(wav);
 
+                TranscriptSegment? phrase = null;
                 await foreach (TranscriptSegment segment in _transcriber.TranscribeAsync(resampled, token))
                 {
-                    if (!string.IsNullOrWhiteSpace(segment.Text) && !IsNonSpeechHallucination(segment.Text) &&
-                        (_sourceLanguage is null || string.Equals(segment.Language, _sourceLanguage, StringComparison.OrdinalIgnoreCase)))
+                    bool accepted = !string.IsNullOrWhiteSpace(segment.Text) &&
+                        !IsNonSpeechHallucination(segment.Text) &&
+                        (_sourceLanguage is null || string.Equals(segment.Language, _sourceLanguage, StringComparison.OrdinalIgnoreCase));
+                    if (!accepted)
                     {
-                        await _transcripts.Writer.WriteAsync(segment, token);
+                        if (phrase is not null)
+                        {
+                            await _transcripts.Writer.WriteAsync(phrase, token);
+                            phrase = null;
+                        }
+                        continue;
+                    }
+
+                    if (phrase is not null && string.Equals(phrase.Language, segment.Language, StringComparison.OrdinalIgnoreCase))
+                    {
+                        phrase = phrase with { Text = phrase.Text.TrimEnd() + " " + segment.Text.Trim(), End = segment.End };
+                    }
+                    else
+                    {
+                        if (phrase is not null) await _transcripts.Writer.WriteAsync(phrase, token);
+                        phrase = segment;
                     }
                 }
+                if (phrase is not null) await _transcripts.Writer.WriteAsync(phrase, token);
             }
         }
         catch (OperationCanceledException)
