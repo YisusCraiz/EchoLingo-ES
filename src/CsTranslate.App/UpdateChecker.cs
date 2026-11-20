@@ -38,13 +38,12 @@ internal static class UpdateChecker
             if (latestVersion <= currentVersion || WasSkipped(tag))
                 return;
 
-            var answer = MessageBox.Show(
-                "Hay una nueva versión de EchoLingo ES (" + tag + ").\n\n" +
-                "Sí: abrir la página para descargarla.\nNo: saltar esta versión.",
-                "Actualización disponible",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Information);
-            if (answer == MessageBoxResult.No)
+            var answer = UiLanguage.Confirm(
+                UiLanguage.T("Hay una nueva versión de EchoLingo ES (") + tag + ").\n\n" +
+                UiLanguage.T("Sí: abrir la página para descargarla.\nNo: saltar esta versión."),
+                UiLanguage.T("Actualización disponible"),
+                "Descargar actualización", "Saltar versión");
+            if (!answer)
             {
                 SaveSkippedVersion(tag);
                 return;
