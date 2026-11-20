@@ -31,6 +31,27 @@ public partial class SettingsWindow : Window
     private long _lastAudioTicks;
     private long _captureStartedTicks;
     private readonly DispatcherTimer _audioMeterTimer = new() { Interval = TimeSpan.FromMilliseconds(100) };
+    private Func<string>? _statusRenderer;
+
+    private void SetStatus(Func<string> render)
+    {
+        _statusRenderer = render;
+        StatusText.Text = render();
+    }
+
+    private void OnInterfaceLanguageChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (InterfaceLanguagePicker.SelectedValue is not string code) return;
+        _settings.InterfaceLanguage = code;
+        UiLanguage.SetLanguage(code);
+        if (_statusRenderer is not null) StatusText.Text = _statusRenderer();
+        try { _settingsService.Save(_settings); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            SetStatus(() => UiLanguage.F("No se pudo guardar el idioma: {0}", ex.Message));
+        }
+    }
+
     private AudioProcessInfo? _selectedAudioProcess;
 
     public SettingsWindow(OverlayViewModel overlayViewModel, AppSettings settings, SettingsService settingsService)
@@ -39,6 +60,7 @@ public partial class SettingsWindow : Window
         _settings = settings;
         _settingsService = settingsService;
         InitializeComponent();
+        InterfaceLanguagePicker.SelectedValue = _settings.InterfaceLanguage;
 
         ProcessNameBox.Text = _settings.TargetProcessName;
         TargetLanguageBox.Text = _settings.TargetLanguageCode;
@@ -79,7 +101,7 @@ public partial class SettingsWindow : Window
     {
         int? previouslySelectedProcessId = _selectedAudioProcess?.ProcessId;
         DetectAudioButton.IsEnabled = false;
-        StatusText.Text = "Buscando aplicaciones que estén reproduciendo audio...";
+        SetStatus(() => UiLanguage.T("Buscando aplicaciones que estén reproduciendo audio..."));
 
         try
         {
@@ -101,22 +123,22 @@ public partial class SettingsWindow : Window
 
             if (activeProcesses.Length == 0)
             {
-                StatusText.Text = "No detecté audio activo. Reproduce una voz o sonido y pulsa «Buscar audio».";
+                SetStatus(() => UiLanguage.T("No detecté audio activo. Reproduce una voz o sonido y pulsa «Buscar audio»."));
             }
             else if (selection is not null)
             {
-                StatusText.Text = $"Fuente detectada: {selection.DisplayName}. Pulsa Iniciar para capturarla.";
+                SetStatus(() => UiLanguage.F("Fuente detectada: {0}. Pulsa Iniciar para capturarla.", selection.DisplayName));
             }
             else
             {
-                StatusText.Text = $"Detecté {activeProcesses.Length} aplicaciones con audio. Selecciona la que quieres capturar.";
+                SetStatus(() => UiLanguage.F("Detecté {0} aplicaciones con audio. Selecciona la que quieres capturar.", activeProcesses.Length));
             }
         }
         catch (Exception ex)
         {
             _selectedAudioProcess = null;
             ActiveAudioProcessesComboBox.ItemsSource = Array.Empty<AudioProcessInfo>();
-            StatusText.Text = $"No se pudieron detectar las aplicaciones de audio: {ex.Message}";
+            SetStatus(() => UiLanguage.F("No se pudieron detectar las aplicaciones de audio: {0}", ex.Message));
         }
         finally
         {
@@ -133,17 +155,17 @@ public partial class SettingsWindow : Window
 
         _selectedAudioProcess = selected;
         ProcessNameBox.Text = selected.ProcessName;
-        StatusText.Text = _pipeline is null
-            ? $"Fuente seleccionada: {selected.DisplayName}. Pulsa Iniciar subtítulos."
-            : $"Fuente seleccionada: {selected.DisplayName}. Pulsa Detener y después Iniciar para cambiar.";
+        SetStatus(() => _pipeline is null
+            ? UiLanguage.F("Fuente seleccionada: {0}. Pulsa Iniciar subtítulos.", selected.DisplayName)
+            : UiLanguage.F("Fuente seleccionada: {0}. Pulsa Detener y después Iniciar para cambiar.", selected.DisplayName));
     }
 
     private void OnBrowseModelClicked(object sender, RoutedEventArgs e)
     {
         var dialog = new OpenFileDialog
         {
-            Title = "Selecciona el modelo de Whisper",
-            Filter = "Modelos Whisper (*.bin)|*.bin|Todos los archivos (*.*)|*.*",
+            Title = UiLanguage.T("Selecciona el modelo de Whisper"),
+            Filter = UiLanguage.T("Modelos Whisper (*.bin)|*.bin|Todos los archivos (*.*)|*.*"),
             CheckFileExists = true,
             FileName = Path.GetFileName(WhisperModelPathBox.Text)
         };
@@ -182,16 +204,16 @@ public partial class SettingsWindow : Window
         AudioLevelMeter.Value = Math.Clamp(peak * 100, 0, 100);
         if (_pipeline is null)
         {
-            AudioLevelText.Text = "Inicia los subtítulos para medir el audio.";
+            AudioLevelText.Text = UiLanguage.T("Inicia los subtítulos para medir el audio.");
             return;
         }
         long last = Interlocked.Read(ref _lastAudioTicks);
         double seconds = TimeSpan.FromTicks(DateTime.UtcNow.Ticks - Math.Max(last, _captureStartedTicks)).TotalSeconds;
         AudioLevelText.Text = seconds < 2 && last != 0
-            ? "Se está recibiendo audio. El nivel indica sonido, no necesariamente voz."
+            ? UiLanguage.T("Se está recibiendo audio. El nivel indica sonido, no necesariamente voz.")
             : seconds >= 5
-                ? "Sin señal reciente: reproduce una voz y comprueba que elegiste la aplicación correcta."
-                : "Captura iniciada. Esperando audio de la aplicación...";
+                ? UiLanguage.T("Sin señal reciente: reproduce una voz y comprueba que elegiste la aplicación correcta.")
+                : UiLanguage.T("Captura iniciada. Esperando audio de la aplicación...");
     }
 
     private async void OnStartClicked(object sender, RoutedEventArgs e)
@@ -208,7 +230,7 @@ public partial class SettingsWindow : Window
         }
         catch (Exception ex)
         {
-            StatusText.Text = $"No se pudo iniciar: {ex.Message}";
+            SetStatus(() => UiLanguage.F("No se pudo iniciar: {0}", ex.Message));
         }
         finally
         {
@@ -247,42 +269,41 @@ public partial class SettingsWindow : Window
         processId ??= ProcessLookup.FindProcessId(_settings.TargetProcessName);
         if (processId is null)
         {
-            StatusText.Text = $"No se encontró una aplicación en ejecución llamada '{_settings.TargetProcessName}'.";
+            SetStatus(() => UiLanguage.F("No se encontró una aplicación en ejecución llamada '{0}'.", _settings.TargetProcessName));
             return;
         }
 
         if (!File.Exists(_settings.WhisperModelPath))
         {
-            StatusText.Text = $"No se encontró el archivo del modelo Whisper: {_settings.WhisperModelPath}";
+            SetStatus(() => UiLanguage.F("No se encontró el archivo del modelo Whisper: {0}", _settings.WhisperModelPath));
             return;
         }
 
         var translationClient = new LibreTranslateClient(_settings.LibreTranslateBaseUrl);
         if (!await translationClient.IsHealthyAsync())
         {
-            MessageBoxResult choice = MessageBox.Show(
-                "EchoLingo puede preparar LibreTranslate en un entorno aislado dentro de tu usuario. Se necesita Python 3.13 y conexión a internet. La primera descarga de paquetes y modelos puede tardar varios minutos y ocupar bastante espacio. ¿Continuar?",
-                "Preparar traducción",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Information);
+            bool choice = UiLanguage.Confirm(
+                UiLanguage.T("EchoLingo puede preparar LibreTranslate en un entorno aislado dentro de tu usuario. Se necesita Python 3.13 y conexión a internet. La primera descarga de paquetes y modelos puede tardar varios minutos y ocupar bastante espacio. ¿Continuar?"),
+                UiLanguage.T("Preparar traducción"),
+                "Continuar", "Cancelar");
 
-            if (choice != MessageBoxResult.Yes)
+            if (!choice)
             {
-                StatusText.Text = "Preparación cancelada.";
+                SetStatus(() => UiLanguage.T("Preparación cancelada."));
                 return;
             }
 
             StartButton.IsEnabled = false;
-            StatusText.Text = "Preparando el traductor...";
+            SetStatus(() => UiLanguage.T("Preparando el traductor..."));
             try
             {
                 await _translationService.EnsureStartedAsync(
                     _settings.LibreTranslateBaseUrl,
-                    status => StatusText.Text = status);
+                    status => SetStatus(() => status));
             }
             catch (Exception ex)
             {
-                StatusText.Text = $"No se pudo preparar LibreTranslate: {ex.Message}";
+                SetStatus(() => UiLanguage.F("No se pudo preparar LibreTranslate: {0}", ex.Message));
                 StartButton.IsEnabled = true;
                 return;
             }
@@ -293,7 +314,7 @@ public partial class SettingsWindow : Window
             return;
         }
         StartButton.IsEnabled = false;
-        StatusText.Text = "Iniciando captura de audio...";
+        SetStatus(() => UiLanguage.T("Iniciando captura de audio..."));
 
         try
         {
@@ -312,16 +333,16 @@ public partial class SettingsWindow : Window
                 translationClient,
                 _settings,
                 onTranslatedLine: line => Dispatcher.Invoke(() => _overlayViewModel.AddLine(line)),
-                onError: ex => Dispatcher.Invoke(() => StatusText.Text = $"Error: {ex.Message}"));
+                onError: ex => Dispatcher.Invoke(() => SetStatus(() => UiLanguage.F("Error: {0}", ex.Message))));
 
             _pipeline.Start();
 
-            StatusText.Text = $"Traduciendo audio de {selectedAudioName()} -> {_settings.TargetLanguageCode}.";
+            SetStatus(() => UiLanguage.F("Traduciendo audio de {0} -> {1}.", selectedAudioName(), _settings.TargetLanguageCode));
             StopButton.IsEnabled = true;
         }
         catch (Exception ex)
         {
-            StatusText.Text = $"No se pudo iniciar: {ex.Message}";
+            SetStatus(() => UiLanguage.F("No se pudo iniciar: {0}", ex.Message));
 
             if (_captureSource is not null)
             {
@@ -343,11 +364,11 @@ public partial class SettingsWindow : Window
     private async void OnStopClicked(object sender, RoutedEventArgs e)
     {
         StopButton.IsEnabled = false;
-        StatusText.Text = "Deteniendo...";
+        SetStatus(() => UiLanguage.T("Deteniendo..."));
 
         await StopPipelineIfRunningAsync();
 
-        StatusText.Text = "Subtítulos detenidos.";
+        SetStatus(() => UiLanguage.T("Subtítulos detenidos."));
         StartButton.IsEnabled = true;
     }
 
@@ -370,7 +391,7 @@ public partial class SettingsWindow : Window
         StartButton.IsEnabled = false;
         StopButton.IsEnabled = false;
         CloseButton.IsEnabled = false;
-        StatusText.Text = "Cerrando EchoLingo...";
+        SetStatus(() => UiLanguage.T("Cerrando EchoLingo..."));
 
         await StopPipelineIfRunningAsync();
         _translationService.Dispose();

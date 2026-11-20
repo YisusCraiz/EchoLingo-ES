@@ -27,7 +27,7 @@ internal sealed class LibreTranslateServiceManager : IDisposable
             !uri.IsLoopback)
         {
             throw new InvalidOperationException(
-                "La preparación automática solo funciona con una dirección local HTTP, por ejemplo http://localhost:5000. Para una dirección remota, configura ese servidor por separado.");
+                UiLanguage.T("La preparación automática solo funciona con una dirección local HTTP, por ejemplo http://localhost:5000. Para una dirección remota, configura ese servidor por separado."));
         }
 
         if (await new LibreTranslateClient(baseUrl).IsHealthyAsync(cancellationToken))
@@ -41,9 +41,9 @@ internal sealed class LibreTranslateServiceManager : IDisposable
 
         if (!File.Exists(venvPython))
         {
-            reportStatus("Buscando Python 3.13...");
+            reportStatus(UiLanguage.T("Buscando Python 3.13..."));
             await RunLauncherAsync(["-3.13", "--version"], cancellationToken);
-            reportStatus("Creando un entorno aislado...");
+            reportStatus(UiLanguage.T("Creando un entorno aislado..."));
             await RunLauncherAsync(["-3.13", "-m", "venv", Path.Combine(_runtimeDirectory, "venv")], cancellationToken);
         }
 
@@ -53,7 +53,7 @@ internal sealed class LibreTranslateServiceManager : IDisposable
             !string.Equals(File.ReadAllText(versionFile).Trim(), LibreTranslateVersion, StringComparison.Ordinal);
         if (translatorNeedsInstall)
         {
-            reportStatus("Descargando e instalando LibreTranslate. La primera descarga puede tardar...");
+            reportStatus(UiLanguage.T("Descargando e instalando LibreTranslate. La primera descarga puede tardar..."));
 
             await RunPythonAsync(venvPython, ["-m", "pip", "install", "--upgrade", "--disable-pip-version-check", "setuptools<81", $"libretranslate=={LibreTranslateVersion}"], cancellationToken);
             File.WriteAllText(versionFile, LibreTranslateVersion);
@@ -90,13 +90,13 @@ internal sealed class LibreTranslateServiceManager : IDisposable
         _server.ErrorDataReceived += (_, e) => AppendLog(logPath, e.Data);
         if (!_server.Start())
         {
-            throw new InvalidOperationException("Windows no pudo iniciar LibreTranslate.");
+            throw new InvalidOperationException(UiLanguage.T("Windows no pudo iniciar LibreTranslate."));
         }
 
         _server.BeginOutputReadLine();
         _server.BeginErrorReadLine();
 
-        reportStatus("Iniciando el traductor y preparando inglés/español...");
+        reportStatus(UiLanguage.T("Iniciando el traductor y preparando inglés/español..."));
         DateTimeOffset deadline = DateTimeOffset.UtcNow + StartupTimeout;
         while (DateTimeOffset.UtcNow < deadline)
         {
@@ -104,7 +104,7 @@ internal sealed class LibreTranslateServiceManager : IDisposable
             if (_server.HasExited)
             {
                 throw new InvalidOperationException(
-                    $"LibreTranslate se cerró durante el inicio. Revisa el registro: {logPath}");
+                    UiLanguage.F("LibreTranslate se cerró durante el inicio. Revisa el registro: {0}", logPath));
             }
 
             if (await new LibreTranslateClient(baseUrl).IsHealthyAsync(cancellationToken))
@@ -115,7 +115,7 @@ internal sealed class LibreTranslateServiceManager : IDisposable
             await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
         }
 
-        throw new TimeoutException($"LibreTranslate no respondió después de 10 minutos. Revisa el registro: {logPath}");
+        throw new TimeoutException(UiLanguage.F("LibreTranslate no respondió después de 10 minutos. Revisa el registro: {0}", logPath));
     }
 
     private static Task RunLauncherAsync(IReadOnlyList<string> arguments, CancellationToken cancellationToken)
@@ -173,13 +173,13 @@ internal sealed class LibreTranslateServiceManager : IDisposable
         {
             if (!process.Start())
             {
-                throw new InvalidOperationException($"No se pudo iniciar {executable}.");
+                throw new InvalidOperationException(UiLanguage.F("No se pudo iniciar {0}.", executable));
             }
         }
         catch (System.ComponentModel.Win32Exception ex)
         {
             throw new InvalidOperationException(
-                "No se encontró Python 3.13. Vuelve a ejecutar el instalador de EchoLingo y marca “Instalar Python 3.13”, o instálalo desde python.org y vuelve a intentar.", ex);
+                UiLanguage.T("No se encontró Python 3.13. Vuelve a ejecutar el instalador de EchoLingo y marca “Instalar Python 3.13”, o instálalo desde python.org y vuelve a intentar."), ex);
         }
 
         process.BeginOutputReadLine();
@@ -190,7 +190,7 @@ internal sealed class LibreTranslateServiceManager : IDisposable
             string details = output.ToString();
             if (details.Length > 3000) details = details[^3000..];
             throw new InvalidOperationException(
-                $"{Path.GetFileName(executable)} terminó con código {process.ExitCode}." +
+                UiLanguage.F("{0} terminó con código {1}.", Path.GetFileName(executable), process.ExitCode) +
                 (string.IsNullOrWhiteSpace(details) ? string.Empty : Environment.NewLine + details));
         }
     }

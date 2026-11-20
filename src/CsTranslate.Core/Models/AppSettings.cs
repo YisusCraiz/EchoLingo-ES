@@ -21,6 +21,7 @@ public sealed class VadSettings
 
 public sealed class AppSettings
 {
+    public string InterfaceLanguage { get; set; } = "es";
     public string TargetProcessName { get; set; } = "Discord.exe";
     public string TargetLanguageCode { get; set; } = "en";
     public string WhisperModelPath { get; set; } = Path.Combine(AppContext.BaseDirectory, "models", "ggml-base.bin");
