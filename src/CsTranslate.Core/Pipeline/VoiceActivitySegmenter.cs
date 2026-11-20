@@ -11,7 +11,8 @@ namespace CsTranslate.Core.Pipeline;
 /// </summary>
 public sealed class VoiceActivitySegmenter
 {
-    private const double TrailingSilenceMs = 300;
+    private readonly object _sync = new();
+    private readonly TimeProvider _clock;
 
     private readonly VadSettings _settings;
     private readonly List<byte> _buffer = [];
@@ -22,14 +23,20 @@ public sealed class VoiceActivitySegmenter
 
     public event EventHandler<AudioChunk>? ChunkReady;
 
-    public VoiceActivitySegmenter(VadSettings settings)
+    public VoiceActivitySegmenter(VadSettings settings, TimeProvider? clock = null)
     {
         _settings = settings;
+        _clock = clock ?? TimeProvider.System;
     }
 
     public void Feed(byte[] pcm, WaveFormatInfo format)
     {
-        DateTime now = DateTime.UtcNow;
+        lock (_sync) FeedCore(pcm, format);
+    }
+
+    private void FeedCore(byte[] pcm, WaveFormatInfo format)
+    {
+        DateTime now = _clock.GetUtcNow().UtcDateTime;
         bool hasVoice = ComputeRms(pcm, format) > _settings.SilenceThresholdRms;
 
         // Ignore silence until there is actual speech. Otherwise Whisper receives
@@ -54,23 +61,36 @@ public sealed class VoiceActivitySegmenter
             _lastLoudAt = now;
         }
 
-        double bufferedSeconds = (now - _bufferStartedAt).TotalSeconds;
-        bool hardCap = bufferedSeconds >= Math.Min(_settings.ChunkHardCapSeconds, 4.0);
-        bool softCutOnTrailingSilence = bufferedSeconds >= Math.Min(_settings.ChunkSoftSeconds, 0.55)
-            && (now - _lastLoudAt).TotalMilliseconds >= TrailingSilenceMs;
+        if ((now - _bufferStartedAt).TotalSeconds >= Math.Clamp(_settings.SentenceMaxSeconds, 2, 30))
+        {
+            EmitChunk();
+        }
+        else
+        {
+            CheckForSilenceCore(now);
+        }
+    }
 
-        if (hardCap || softCutOnTrailingSilence)
+    // Also called periodically: some audio apps stop sending WASAPI packets on silence.
+    public void CheckForSilence()
+    {
+        lock (_sync) CheckForSilenceCore(_clock.GetUtcNow().UtcDateTime);
+    }
+
+    private void CheckForSilenceCore(DateTime now)
+    {
+        if (_hasVoice && (now - _lastLoudAt).TotalMilliseconds >=
+            Math.Clamp(_settings.SentencePauseMilliseconds, 300, 3000))
         {
             EmitChunk();
         }
     }
 
-    /// <summary>Emits whatever's buffered. Call when capture stops so trailing audio isn't lost.</summary>
     public void Flush()
     {
-        if (_buffer.Count > 0)
+        lock (_sync)
         {
-            EmitChunk();
+            if (_buffer.Count > 0) EmitChunk();
         }
     }
 

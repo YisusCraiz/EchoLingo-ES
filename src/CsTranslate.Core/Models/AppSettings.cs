@@ -12,6 +12,8 @@ public sealed class OverlaySettings
 
 public sealed class VadSettings
 {
+    public double SentencePauseMilliseconds { get; set; } = 900;
+    public double SentenceMaxSeconds { get; set; } = 12;
     public double ChunkSoftSeconds { get; set; } = 2.0;
     public double ChunkHardCapSeconds { get; set; } = 6.0;
     public double SilenceThresholdRms { get; set; } = 0.01;
