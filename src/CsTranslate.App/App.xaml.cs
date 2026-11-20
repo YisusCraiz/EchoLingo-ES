@@ -17,6 +17,7 @@ public partial class App : Application
         {
             var settingsService = new SettingsService();
             var settings = settingsService.Load();
+            UiLanguage.SetLanguage(settings.InterfaceLanguage);
             var overlayViewModel = new OverlayViewModel(settings.Overlay.MaxLines);
             var overlay = new OverlayWindow(overlayViewModel, settings, settingsService);
             overlay.Show();
@@ -36,7 +37,7 @@ public partial class App : Application
     {
         TryLogError("runtime", e.Exception);
         MessageBox.Show(
-            "Ocurrió un error inesperado:\n\n" + e.Exception.Message + "\n\nConsulta el registro de errores para más detalles.",
+            UiLanguage.T("Ocurrió un error inesperado:\n\n") + e.Exception.Message + UiLanguage.T("\n\nConsulta el registro de errores para más detalles."),
             "EchoLingo ES - Error",
             MessageBoxButton.OK,
             MessageBoxImage.Error);
