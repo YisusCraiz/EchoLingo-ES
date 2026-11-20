@@ -130,35 +130,40 @@
             <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
             <StackPanel>
                 <TextBlock Text="EchoLingo" FontSize="26" FontWeight="Bold" />
-                <TextBlock Text="Escucha. Comprende. Sigue la conversación." Style="{StaticResource Muted}" Margin="0,3,8,0" />
+                <TextBlock Text="{DynamicResource Ui_0}" Style="{StaticResource Muted}" Margin="0,3,8,0" />
             </StackPanel>
-            <Border Grid.Column="1" Background="#173C3F" CornerRadius="6" Padding="10,5" VerticalAlignment="Top">
-                <TextBlock Text="ES ↔ EN" Foreground="#5EEAD4" FontWeight="SemiBold" />
-            </Border>
+            <StackPanel Grid.Column="1" VerticalAlignment="Top" Margin="8,0,0,0">
+                <TextBlock Text="{DynamicResource Ui_40}" FontSize="11" Margin="0,0,0,4" />
+                <ComboBox x:Name="InterfaceLanguagePicker" Width="125" SelectedValuePath="Tag"
+                          SelectionChanged="OnInterfaceLanguageChanged" AutomationProperties.Name="Español / English">
+                    <ComboBoxItem Content="Español" Tag="es" />
+                    <ComboBoxItem Content="English" Tag="en" />
+                </ComboBox>
+            </StackPanel>
         </Grid>
 
         <TabControl Grid.Row="1" Background="#101827" BorderThickness="0" Padding="0,12,0,0">
-            <TabItem Header="_Traducir">
+            <TabItem Header="{DynamicResource Ui_1}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="0,0,4,0">
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
                                 <Grid>
                                     <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-                                    <TextBlock Text="01  Audio de la conversación" Style="{StaticResource Heading}" VerticalAlignment="Center" Margin="0,0,8,0" />
-                                    <Button x:Name="DetectAudioButton" Grid.Column="1" Content="Buscar apps" Click="OnDetectAudioClicked" ToolTip="Reproduce una voz en la aplicación y actualiza la lista." />
+                                    <TextBlock Text="{DynamicResource Ui_2}" Style="{StaticResource Heading}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <Button x:Name="DetectAudioButton" Grid.Column="1" Content="{DynamicResource Ui_3}" Click="OnDetectAudioClicked" ToolTip="{DynamicResource Ui_4}" />
                                 </Grid>
-                                <TextBlock Text="Reproduce una voz en WhatsApp, Discord o tu juego. Después busca y selecciona esa aplicación." Style="{StaticResource Muted}" />
+                                <TextBlock Text="{DynamicResource Ui_5}" Style="{StaticResource Muted}" />
                                 <ComboBox x:Name="ActiveAudioProcessesComboBox" DisplayMemberPath="Label"
                                           MaxDropDownHeight="200" SelectionChanged="OnAudioProcessSelected"
-                                          AutomationProperties.Name="Aplicación cuyo audio se traducirá" />
+                                          AutomationProperties.Name="{DynamicResource Ui_6}" />
                                 <Border Background="#101B2B" CornerRadius="8" Padding="12" Margin="0,12,0,0">
                                     <StackPanel>
-                                        <TextBlock Text="SEÑAL DE AUDIO" FontSize="10" FontWeight="Bold" Foreground="#AAB9CE" Margin="0,0,0,7" />
+                                        <TextBlock Text="{DynamicResource Ui_7}" FontSize="10" FontWeight="Bold" Foreground="#AAB9CE" Margin="0,0,0,7" />
                                         <ProgressBar x:Name="AudioLevelMeter" Minimum="0" Maximum="100" Value="0" Height="10"
                                                      Foreground="#5EEAD4" Background="#304056" BorderThickness="0"
-                                                     AutomationProperties.Name="Nivel del audio capturado" />
-                                        <TextBlock x:Name="AudioLevelText" Text="Inicia la captura para comprobar la señal."
+                                                     AutomationProperties.Name="{DynamicResource Ui_8}" />
+                                        <TextBlock x:Name="AudioLevelText" Text="{DynamicResource Ui_9}"
                                                    Style="{StaticResource Muted}" Margin="0,7,0,0" />
                                     </StackPanel>
                                 </Border>
@@ -167,25 +172,25 @@
 
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
-                                <TextBlock Text="02  Idiomas" Style="{StaticResource Heading}" />
-                                <TextBlock Text="Elige qué idioma aceptar y a cuál traducir. Con «Detectar idioma» se aceptan ambos." Style="{StaticResource Muted}" />
+                                <TextBlock Text="{DynamicResource Ui_10}" Style="{StaticResource Heading}" />
+                                <TextBlock Text="{DynamicResource Ui_11}" Style="{StaticResource Muted}" />
                                 <Grid>
                                     <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="16" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
                                     <StackPanel>
-                                        <TextBlock Text="Se escucha" Foreground="#AAB9CE" Margin="0,0,0,6" />
+                                        <TextBlock Text="{DynamicResource Ui_12}" Foreground="#AAB9CE" Margin="0,0,0,6" />
                                         <ComboBox x:Name="SpokenLanguagePicker" SelectedValuePath="Tag" SelectionChanged="OnSpokenLanguageChanged"
-                                                  AutomationProperties.Name="Idioma hablado">
-                                            <ComboBoxItem Content="Detectar idioma" Tag="" />
-                                            <ComboBoxItem Content="Inglés" Tag="en" />
-                                            <ComboBoxItem Content="Español" Tag="es" />
+                                                  AutomationProperties.Name="{DynamicResource Ui_13}">
+                                            <ComboBoxItem Content="{DynamicResource Ui_14}" Tag="" />
+                                            <ComboBoxItem Content="{DynamicResource Ui_15}" Tag="en" />
+                                            <ComboBoxItem Content="{DynamicResource Ui_16}" Tag="es" />
                                         </ComboBox>
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
-                                        <TextBlock Text="Quiero leer" Foreground="#AAB9CE" Margin="0,0,0,6" />
+                                        <TextBlock Text="{DynamicResource Ui_17}" Foreground="#AAB9CE" Margin="0,0,0,6" />
                                         <ComboBox x:Name="TargetLanguagePicker" SelectedValuePath="Tag" SelectionChanged="OnTargetLanguageChanged"
-                                                  AutomationProperties.Name="Idioma de los subtítulos">
-                                            <ComboBoxItem Content="Español" Tag="es" />
-                                            <ComboBoxItem Content="Inglés" Tag="en" />
+                                                  AutomationProperties.Name="{DynamicResource Ui_18}">
+                                            <ComboBoxItem Content="{DynamicResource Ui_16}" Tag="es" />
+                                            <ComboBoxItem Content="{DynamicResource Ui_15}" Tag="en" />
                                         </ComboBox>
                                     </StackPanel>
                                 </Grid>
@@ -194,34 +199,34 @@
 
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
-                                <TextBlock Text="03  Tus subtítulos" Style="{StaticResource Heading}" />
-                                <TextBlock Text="F9 abre el historial: usa la rueda para leer mensajes anteriores. Pulsa F9 otra vez para seguir en vivo. En juegos, usa pantalla completa sin bordes."
+                                <TextBlock Text="{DynamicResource Ui_19}" Style="{StaticResource Heading}" />
+                                <TextBlock Text="{DynamicResource Ui_20}"
                                            Style="{StaticResource Muted}" />
-                                <Button Content="Mostrar y colocar subtítulos" Click="OnPreviewOverlayClicked" HorizontalAlignment="Left" />
+                                <Button Content="{DynamicResource Ui_21}" Click="OnPreviewOverlayClicked" HorizontalAlignment="Left" />
                             </StackPanel>
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
-            <TabItem Header="_Ajustes">
+            <TabItem Header="{DynamicResource Ui_22}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="0,0,4,0">
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
-                                <TextBlock Text="Configuración avanzada" Style="{StaticResource Heading}" />
-                                <TextBlock Text="Los valores predeterminados funcionan con la instalación habitual. Cambia estos campos si necesitas una configuración personalizada." Style="{StaticResource Muted}" />
-                                <TextBlock Text="Proceso de la aplicación (selección manual)" />
-                                <TextBox x:Name="ProcessNameBox" ToolTip="Nombre .exe o PID. Se completa al seleccionar una aplicación." />
-                                <TextBlock Text="Modelo de voz Whisper (.bin)" />
+                                <TextBlock Text="{DynamicResource Ui_23}" Style="{StaticResource Heading}" />
+                                <TextBlock Text="{DynamicResource Ui_24}" Style="{StaticResource Muted}" />
+                                <TextBlock Text="{DynamicResource Ui_25}" />
+                                <TextBox x:Name="ProcessNameBox" ToolTip="{DynamicResource Ui_26}" />
+                                <TextBlock Text="{DynamicResource Ui_27}" />
                                 <TextBox x:Name="WhisperModelPathBox" />
-                                <Button Content="Elegir archivo del modelo" Click="OnBrowseModelClicked" HorizontalAlignment="Left" Margin="0,0,0,16" />
-                                <TextBlock Text="Dirección del servidor de traducción" />
+                                <Button Content="{DynamicResource Ui_28}" Click="OnBrowseModelClicked" HorizontalAlignment="Left" Margin="0,0,0,16" />
+                                <TextBlock Text="{DynamicResource Ui_29}" />
                                 <TextBox x:Name="LibreTranslateUrlBox" />
-                                <Expander Header="Códigos de idioma personalizados" Foreground="#AAB9CE">
+                                <Expander Header="{DynamicResource Ui_30}" Foreground="#AAB9CE">
                                     <StackPanel Margin="0,12,0,0">
-                                        <TextBlock Text="Idioma destino (ejemplo: es)" />
+                                        <TextBlock Text="{DynamicResource Ui_31}" />
                                         <TextBox x:Name="TargetLanguageBox" />
-                                        <TextBlock Text="Idioma hablado (vacío = automático)" />
+                                        <TextBlock Text="{DynamicResource Ui_32}" />
                                         <TextBox x:Name="WhisperLanguageBox" />
                                     </StackPanel>
                                 </Expander>
@@ -236,16 +241,16 @@
             <Border Background="#101B2B" BorderBrush="#304056" BorderThickness="1"
                     CornerRadius="8" Padding="12,9" Margin="0,0,0,12">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="72">
-                    <TextBlock x:Name="StatusText" Text="Busca una aplicación con audio para comenzar."
+                    <TextBlock x:Name="StatusText" Text="{DynamicResource Ui_33}"
                                Foreground="#CBD5E1" FontSize="12" />
                 </ScrollViewer>
             </Border>
             <Grid>
                 <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-                <Button x:Name="StartButton" Content="_Iniciar traducción" Background="#5EEAD4" Foreground="#102B2B"
+                <Button x:Name="StartButton" Content="{DynamicResource Ui_34}" Background="#5EEAD4" Foreground="#102B2B"
                         BorderBrush="#5EEAD4" Click="OnStartClicked" Margin="0,0,8,0" />
-                <Button x:Name="StopButton" Grid.Column="1" Content="_Detener" Click="OnStopClicked" IsEnabled="False" Margin="0,0,8,0" />
-                <Button x:Name="CloseButton" Grid.Column="2" Content="Salir" Click="OnCloseClicked" Background="#101827" />
+                <Button x:Name="StopButton" Grid.Column="1" Content="{DynamicResource Ui_35}" Click="OnStopClicked" IsEnabled="False" Margin="0,0,8,0" />
+                <Button x:Name="CloseButton" Grid.Column="2" Content="{DynamicResource Ui_36}" Click="OnCloseClicked" Background="#101827" />
             </Grid>
         </StackPanel>
     </Grid>
