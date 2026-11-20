@@ -1,7 +1,7 @@
 <Window x:Class="CsTranslate.App.Views.OverlayWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="EchoLingo ES - Subtítulos"
+        Title="{DynamicResource Ui_37}"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
@@ -32,14 +32,14 @@
             </Grid.RowDefinitions>
             <TextBlock x:Name="EditModeHint" MouseLeftButtonDown="OnMouseLeftButtonDown" Background="Transparent"
                        Grid.Row="0"
-                       Text="Usa la rueda para leer el historial. Arrastra esta barra para mover el recuadro. F9 vuelve a los subtítulos en vivo."
+                       Text="{DynamicResource Ui_38}"
                        Foreground="#FFD966"
                        FontSize="11"
                        TextWrapping="Wrap"
                        Margin="0,0,0,6"
                        Visibility="Collapsed" />
             <TextBlock x:Name="OverlayPlaceholder" Grid.Row="1"
-                       Text="Aquí aparecerán los subtítulos. Inicia la captura y reproduce una voz. F9 permite mover y cambiar el tamaño."
+                       Text="{DynamicResource Ui_39}"
                        Foreground="#CCCCCC" FontSize="14" TextWrapping="Wrap" />
             <ScrollViewer x:Name="CaptionScroll" Grid.Row="1"
                           VerticalScrollBarVisibility="Auto"
